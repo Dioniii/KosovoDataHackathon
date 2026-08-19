@@ -9,6 +9,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
+import ai_advisor
 from data_loader import load_data
 from scoring import (
     business_trend_points,
@@ -112,6 +113,8 @@ if national:
         f"FDI {national.get('fdi_pct_gdp', '—')}% of GDP "
         f"(as of {national.get('last_updated', '—')})."
     )
+
+ai_advisor.render(data)
 
 tab_property, tab_business = st.tabs(["Buy property", "Invest in a business"])
 
