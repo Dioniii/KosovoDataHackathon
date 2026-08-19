@@ -109,6 +109,28 @@ blocker.
   correct UTF-8 (`ensure_ascii=False` in `fetch.py`), and this is expected to be fine, but a
   human should actually look at the rendered page once before the demo rather than take
   that on faith.
+- **Property-tab region map (new, `build_region_map()` in `app/app.py`):** the map's
+  click-to-select path (`st.plotly_chart(..., on_select="rerun", selection_mode="points")`,
+  key `"property_map"`) cannot be exercised by `AppTest` — Streamlit's own source
+  (`streamlit/elements/plotly_chart.py`) documents that Plotly chart selection state
+  "cannot be programmatically changed or set through Session State," unlike the ranked
+  table's `st.dataframe` selection, which can be and was used for the automated regression
+  checks above. Verified automatically: the map renders with no exceptions, the table's
+  own selection path still works unchanged, and the app boots cleanly with the map present
+  (`streamlit run app/app.py`, HTTP 200). **Not yet verified by an actual click:** that
+  clicking a map bubble updates the detail panel, that clicking the table afterward
+  correctly takes back over (and vice versa — see `_selection_changed()`'s diff-based
+  precedence logic), that the OSM basemap tiles actually load (this needs internet — a
+  deliberate tradeoff, see below), and that the map doesn't overflow at a narrow browser
+  width. Needs one real browser pass before the demo.
+- **Map requires internet access at render time.** Unlike the rest of the app (which reads
+  only the pre-fetched `pipeline/data.json`, specifically to avoid any live dependency
+  during judging), the map's `"open-street-map"` tile style fetches basemap tiles from
+  OpenStreetMap/Carto over the network every time it renders. This was a deliberate choice
+  (a blank/offline scatter plot was the alternative, and was rejected as not looking like an
+  actual map of Kosovo) — but it does mean the venue's Wi-Fi becomes a real dependency for
+  this one chart, unlike everything else in the app. Worth a quick pre-demo connectivity
+  check.
 ---
 
 ## Worth implementing (not a bug): scheduled data refresh via GitHub Actions

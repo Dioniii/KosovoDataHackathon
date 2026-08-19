@@ -15,7 +15,7 @@ from data_loader import load_data
 from scoring import (
     business_trend_points,
     compute_property_ranking,
-    housing_trend_points,
+    normalize,
     rank_business,
     rank_colors,
 )
@@ -151,6 +151,53 @@ def build_trend_chart(points: list[tuple[str, float]], y_title: str) -> go.Figur
     return fig
 
 
+def build_region_map(ranking: list[dict], regions: list[dict]) -> go.Figure:
+    """Clickable bubble map of the 7 regions, sized/colored by personalizedScore.
+
+    Same single-hue "darkest = best" convention as build_rank_chart, just
+    applied by region name instead of by bar position, since markers are
+    placed by lat/lon rather than by rank order.
+    """
+    coords_by_name = {r["name"]: r["coordinates"] for r in regions}
+    scores = [r["personalizedScore"] for r in ranking]
+    sizes = [18 + 24 * n for n in normalize(scores)]  # 18-42px, always clickable even at score 0
+    ramp = rank_colors(len(ranking))  # index 0 = lightest = lowest score
+    colors = [ramp[len(ranking) - 1 - i] for i in range(len(ranking))]  # ranking is best-first
+
+    fig = go.Figure(
+        go.Scattermap(
+            lat=[coords_by_name[r["name"]]["lat"] for r in ranking],
+            lon=[coords_by_name[r["name"]]["lon"] for r in ranking],
+            mode="markers",
+            marker=dict(size=sizes, color=colors),
+            text=[r["name"] for r in ranking],
+            customdata=scores,
+            hovertemplate="<b>%{text}</b><br>Personalized score: %{customdata:.1f}<extra></extra>",
+        )
+    )
+    fig.update_layout(
+        template="kosovo",
+        map=dict(style="carto-positron", center=dict(lat=42.52, lon=20.87), zoom=7.6),
+        margin=dict(l=0, r=0, t=0, b=0),
+        width=420,
+        height=420,
+    )
+    return fig
+
+
+def _selection_changed(current: list, remember_key: str) -> bool:
+    """True if a widget's on_select payload differs from what we saw last rerun.
+
+    Used to resolve which of two selection sources (ranked table vs. region
+    map) the user most recently interacted with — both persist their last
+    selection across every rerun regardless of which one actually changed,
+    so "whichever is non-empty" isn't enough to tell them apart.
+    """
+    changed = current != st.session_state.get(remember_key)
+    st.session_state[remember_key] = current
+    return changed
+
+
 def select_row(df: pd.DataFrame, name_col: str, key: str) -> str:
     """Row-select on the ranked table if this Streamlit version supports it,
     else fall back to a plain selectbox of names."""
@@ -165,7 +212,6 @@ def select_row(df: pd.DataFrame, name_col: str, key: str) -> str:
 
 data = load_data()
 regions = data["regions"]
-housing = data["housing"]
 business_sectors = data["business_sectors"]
 insights = data.get("insights", {})
 national = data.get("national", {})
@@ -246,32 +292,71 @@ with tab_property:
             ].round(2)
             table_df.columns = ["Region", "Personalized score", "Momentum score", "Investment YoY %", "Tourism gap (0-1)", "Distance (km)"]
 
-            selected_name = select_row(table_df, "Region", key="property_table")
-
-        detail = next(r for r in ranking if r["name"] == selected_name)
-        region_obj = next(r for r in regions if r["name"] == selected_name)
+            if SUPPORTS_ROW_SELECT:
+                table_event = st.dataframe(
+                    table_df, hide_index=True, on_select="rerun", selection_mode="single-row", key="property_table"
+                )
+            else:
+                st.dataframe(table_df, hide_index=True)
+                table_event = None
 
         with st.container(border=True):
-            st.markdown(f'<h3 style="color:#F43F5E; margin-top:0;">{selected_name}</h3>', unsafe_allow_html=True)
-            avg_score = sum(r["personalizedScore"] for r in ranking) / len(ranking)
-            mcol1, mcol2 = st.columns(2)
-            mcol1.metric(
-                "Personalized score",
-                f"{detail['personalizedScore']:.1f}",
-                delta=f"{detail['personalizedScore'] - avg_score:+.1f} vs. avg of shown regions",
-            )
-            mcol2.metric(
-                "Investment YoY",
-                f"{detail['investment_yoy_pct']:.1f}%",
-                delta=f"{detail['investment_yoy_pct']:.1f}%",
-            )
+            map_col, detail_col = st.columns([1, 1.3])
 
-            trend_points = housing_trend_points(region_obj["housing_bucket"], housing)
-            st.plotly_chart(build_trend_chart(trend_points, "Housing price index (2018 = 100)"), key="property_trend")
+            with map_col:
+                st.caption("Or click a region on the map:")
+                map_event = st.plotly_chart(
+                    build_region_map(ranking, regions),
+                    width=420,
+                    height=420,
+                    config={"displayModeBar": False},
+                    on_select="rerun",
+                    selection_mode="points",
+                    key="property_map",
+                )
 
-            insight_text = insights.get(selected_name, "")
-            st.markdown("**Research brief**")
-            st.write(insight_text if insight_text else "_No research brief yet for this region._")
+            if SUPPORTS_ROW_SELECT:
+                table_rows = table_event["selection"]["rows"] if table_event else []
+                map_points = map_event["selection"]["points"] if map_event else []
+                map_changed = _selection_changed(map_points, "_prev_map_sel")
+                table_changed = _selection_changed(table_rows, "_prev_table_sel")
+
+                if map_changed and map_points:
+                    selected_name = ranking[map_points[0]["point_index"]]["name"]
+                elif table_changed and table_rows:
+                    selected_name = table_df.iloc[table_rows[0]]["Region"]
+                elif st.session_state.get("property_selected_region") in [r["name"] for r in ranking]:
+                    selected_name = st.session_state["property_selected_region"]
+                elif table_rows:
+                    selected_name = table_df.iloc[table_rows[0]]["Region"]
+                else:
+                    selected_name = ranking[0]["name"]
+                st.session_state["property_selected_region"] = selected_name
+            else:
+                # No native row-select widget on this Streamlit version — fall back
+                # to a plain picker; the map above is still shown, view-only.
+                selected_name = st.selectbox("Pick a region to inspect", [r["name"] for r in ranking], key="property_select")
+
+            detail = next(r for r in ranking if r["name"] == selected_name)
+
+            with detail_col:
+                st.markdown(f'<h3 style="color:#F43F5E; margin-top:0;">{selected_name}</h3>', unsafe_allow_html=True)
+                avg_score = sum(r["personalizedScore"] for r in ranking) / len(ranking)
+                mcol1, mcol2 = st.columns(2)
+                mcol1.metric(
+                    "Personalized score",
+                    f"{detail['personalizedScore']:.1f}",
+                    delta=f"{detail['personalizedScore'] - avg_score:+.1f} vs. avg of shown regions",
+                )
+                mcol2.metric(
+                    "Investment YoY",
+                    f"{detail['investment_yoy_pct']:.1f}%",
+                    delta=f"{detail['investment_yoy_pct']:.1f}%",
+                )
+
+                insight_text = insights.get(selected_name, "")
+                st.markdown("**Research brief**")
+                st.write(insight_text if insight_text else "_No research brief yet for this region._")
 
 with tab_business:
     st.subheader("Which municipality is worth researching for a business investment?")
