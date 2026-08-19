@@ -20,7 +20,7 @@ from scoring import (
     rank_colors,
 )
 
-st.set_page_config(page_title="Kosovo Investment Screener", layout="wide")
+st.set_page_config(page_title="Kosovo Investment Screener", page_icon=":material/location_city:", layout="wide")
 
 # Custom Plotly template: discrete/qualitative colorway for any chart comparing
 # genuinely different series (as opposed to the ranked bar charts below, which
@@ -37,22 +37,50 @@ pio.templates["kosovo"] = go.layout.Template(
 )
 pio.templates.default = "kosovo"
 
-# Metric-card styling: Container Base fill, light-slate border, pink highlight
-# on the value. st.metric has no per-instance style params, so this targets its
-# stable data-testid hooks directly.
+# App-wide polish: gradient hero banner, light metric cards (white fill, pink
+# accent value — same #F43F5E brand accent as before, just moved off a dark
+# card onto a light one), and the tab underline/label in that same accent.
+# st.metric has no per-instance style params, so this targets its stable
+# data-testid hooks directly.
 st.markdown(
     """
     <style>
-    [data-testid="stMetric"] {
-        background-color: #0F172A;
-        border: 1px solid #E2E8F0;
-        border-radius: 0.5rem;
-        padding: 1rem 1rem 0.5rem;
+    .ks-hero {
+        background: linear-gradient(120deg, #1E3A8A 0%, #2a78d6 55%, #38BDF8 130%);
+        border-radius: 1rem;
+        padding: 1.75rem 2rem;
+        margin-bottom: 1.1rem;
+        box-shadow: 0 10px 30px rgba(37, 99, 235, 0.18);
     }
-    [data-testid="stMetricLabel"] { color: #E2E8F0; }
-    [data-testid="stMetricValue"] { color: #F43F5E; }
-    [data-baseweb="tab-highlight"] { background-color: #F43F5E !important; }
-    [data-baseweb="tab"][aria-selected="true"] p { color: #F43F5E !important; }
+    .ks-hero-title {
+        color: #ffffff;
+        font-size: 1.9rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        margin-bottom: 0.35rem;
+    }
+    .ks-hero-sub {
+        color: rgba(255, 255, 255, 0.88);
+        font-size: 1rem;
+        max-width: 46rem;
+        line-height: 1.45;
+    }
+    [data-testid="stMetric"] {
+        background-color: #ffffff;
+        border: 1px solid #E2E8F0;
+        border-radius: 0.9rem;
+        padding: 1rem 1.1rem 0.75rem;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+        transition: box-shadow 0.2s ease, transform 0.2s ease;
+    }
+    [data-testid="stMetric"]:hover {
+        box-shadow: 0 10px 26px rgba(15, 23, 42, 0.09);
+        transform: translateY(-2px);
+    }
+    [data-testid="stMetricLabel"] { color: #64748B !important; font-weight: 500; }
+    [data-testid="stMetricValue"] { color: #F43F5E !important; font-weight: 700; }
+    [data-testid="stTab"][aria-selected="true"] p { color: #F43F5E !important; }
+    [data-testid="stTab"] .react-aria-SelectionIndicator { background-color: #F43F5E !important; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -142,10 +170,20 @@ business_sectors = data["business_sectors"]
 insights = data.get("insights", {})
 national = data.get("national", {})
 
-st.title("Kosovo Property & Investment Screener")
+st.markdown(
+    """
+    <div class="ks-hero">
+      <div class="ks-hero-title">Kosovo Property &amp; Investment Screener</div>
+      <div class="ks-hero-sub">Find which region of Kosovo is worth a closer look —
+      for buying property, or investing in a business — using official open statistics.</div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 st.info(
     "**Not investment advice.** This ranks regions using public statistics as a "
-    "starting point for research, not a recommendation."
+    "starting point for research, not a recommendation.",
+    icon=":material/info:",
 )
 if national:
     with st.container(border=True):
