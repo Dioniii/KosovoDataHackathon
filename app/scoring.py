@@ -128,13 +128,16 @@ def proximity_weight(distance_km: float) -> float:
     return 1.0 / (1.0 + distance_km / 50.0)
 
 
-# ------------------------------------------------------------------ #
-# momentum_score  (PROPERTY path — per-region scalar)
-# ------------------------------------------------------------------ #
 def momentum_score(
-    investment_norm: float, tourism_gap_score: float, w_momentum: float, w_tourism: float
-) -> float:
-    """0..100 blend of investment and tourism signals for a single region.
+    regions_or_inv_norm: list[dict] | float,
+    tourism_gap_score: float = 0.5,
+    w_momentum: float = 0.5,
+    w_tourism: float = 0.5
+) -> dict[str, float] | float:
+    """0..100 blend of investment and tourism signals.
+
+    If regions_or_inv_norm is a list of region dicts, returns a dict of {region_name: score} (0..100).
+    If it is a float (investment_norm), returns the single blended score (0..100).
 
     NOTE on investment_yoy_pct: per docs/ANALYSIS_FINDINGS.md this field is a
     proxy — the YoY change in construction's SHARE of the investment mix, not
@@ -142,10 +145,25 @@ def momentum_score(
     regions, which the proxy provides; but any human-readable text must describe
     it correctly (insights.py does this).
     """
-    total_weight = w_momentum + w_tourism
-    if total_weight == 0:
-        return 0.0
-    return 100 * (w_momentum * investment_norm + w_tourism * tourism_gap_score) / total_weight
+    if isinstance(regions_or_inv_norm, list):
+        regions = regions_or_inv_norm
+        inv = _min_max([r["investment_yoy_pct"] for r in regions])
+        tour = _min_max([r["tourism_gap_score"] for r in regions])
+        total = w_momentum + w_tourism
+        if total <= 0:
+            w_momentum = w_tourism = 0.5
+            total = 1.0
+        w_momentum, w_tourism = w_momentum / total, w_tourism / total
+        return {
+            regions[i]["name"]: round(w_momentum * inv[i] + w_tourism * tour[i], 1)
+            for i in range(len(regions))
+        }
+    else:
+        inv_norm = regions_or_inv_norm
+        total_weight = w_momentum + w_tourism
+        if total_weight == 0:
+            return 0.0
+        return 100 * (w_momentum * inv_norm + w_tourism * tourism_gap_score) / total_weight
 
 
 def personalized_score(momentum: float, proximity: float) -> float:
