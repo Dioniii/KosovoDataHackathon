@@ -139,22 +139,31 @@ Ekipi punon **në paralel, jo në seri** — të gjithë ndërtojnë kundrejt ko
 
 ## Si të fillosh
 
-> Përshtat komandat më poshtë me stack-un që përdor vërtet.
-
 ```bash
 # 1. Klono
 git clone https://github.com/<organizata-jote>/kosovo-investment-screener.git
 cd kosovo-investment-screener
 
-# 2. Ndërto skedarin e të dhënave (merr ASKdata + World Bank, shkruan data.json)
-python pipeline/build_data.py        # ose: npm run build:data
+# 2. (Opsionale) Ndërto skedarin e të dhënave reale (merr ASKdata + World Bank, shkruan pipeline/data.json)
+python pipeline/fetch.py
 
-# 3. Nis aplikacionin
-npm install
-npm run dev
+# 3. Instalo varësitë dhe nis aplikacionin (Streamlit)
+pip install -r app/requirements.txt
+streamlit run app/app.py
 ```
 
-Ndërsa pipeline-i është ende në zhvillim, aplikacioni punon kundrejt `sample_data.json` — e njëjta formë si skedari real — kështu që frontend-i nuk pret kurrë të dhënat.
+Nëse hapi 2 anashkalohet, aplikacioni punon automatikisht kundrejt `pipeline/sample_data.json`
+— e njëjta formë si skedari real (shih `docs/DATA_CONTRACT.md`) — kështu që frontend-i nuk
+pret kurrë të dhënat; sapo `pipeline/data.json` të ekzistojë, aplikacioni e përdor atë
+vetvetiu, pa asnjë ndryshim kodi.
+
+### Demo & deployment
+
+Për prezantim, `streamlit run app/app.py` lokalisht është opsioni me rrezik më të ulët —
+nuk varet nga interneti gjatë gjykimit. Nëse duhet një link i ndashëm, Streamlit Community
+Cloud (falas) është destinacioni natyror i deploy-it — por sigurohu që xhirimi lokal të
+punojë dhe të jetë provuar përpara se ta trajtosh deploy-in në cloud si diçka të mirë-për-ta-
+pasur, jo si kërkesë.
 
 ## Përkufizimi i "të mbaruar" (Definition of done)
 
