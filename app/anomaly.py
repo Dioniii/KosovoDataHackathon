@@ -20,16 +20,16 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional
 
-from scoring import _min_max
+from scoring import normalize
 
-# Distance on the normalized 0..100 scale before a gap counts as real.
-GAP_THRESHOLD = 25.0
+# Distance on the normalized 0..1 scale before a gap counts as real.
+GAP_THRESHOLD = 0.25
 
 
 def region_flags(regions: List[dict]) -> Dict[str, Optional[dict]]:
     """Return {region_name: flag_or_None}. flag = {type, gap, message}."""
-    inv = _min_max([r["investment_yoy_pct"] for r in regions])
-    tour = _min_max([r["tourism_gap_score"] for r in regions])
+    inv = normalize([r["investment_yoy_pct"] for r in regions])
+    tour = normalize([r["tourism_gap_score"] for r in regions])
 
     out: Dict[str, Optional[dict]] = {}
     for i, r in enumerate(regions):
@@ -68,7 +68,15 @@ def region_flags(regions: List[dict]) -> Dict[str, Optional[dict]]:
 
 
 if __name__ == "__main__":
-    from scoring import load_data
-    for name, flag in region_flags(load_data()["regions"]).items():
+    import json
+    import os
+    here = os.path.dirname(os.path.abspath(__file__))
+    pipeline = os.path.join(here, "..", "pipeline")
+    path = os.path.join(pipeline, "data.json")
+    if not os.path.exists(path):
+        path = os.path.join(pipeline, "sample_data.json")
+    with open(path, encoding="utf-8") as f:
+        regions = json.load(f)["regions"]
+    for name, flag in region_flags(regions).items():
         print(f"[{flag['type']:16}] {flag['message']}" if flag
               else f"[{'balanced':16}] {name}: investment and demand roughly in step.")

@@ -39,7 +39,7 @@ import sys
 
 # import shared logic from ../app
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "app"))
-from scoring import business_score, momentum_score  # noqa: E402
+from scoring import business_score, momentum_by_region  # noqa: E402
 from anomaly import region_flags  # noqa: E402
 
 PIPELINE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -172,7 +172,7 @@ def make_brief(facts_for_llm: str, template_text: str) -> str:
 def generate(data: dict, force: bool = False) -> tuple[int, int]:
     regions = data["regions"]
     insights = data.setdefault("insights", {})
-    momentum = momentum_score(regions)
+    momentum = momentum_by_region(regions)
     flags = region_flags(regions)
 
     filled = skipped = 0
