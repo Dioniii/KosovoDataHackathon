@@ -1,6 +1,12 @@
 """Kosovo Property & Investment Screener — Streamlit app.
 
 Run with: streamlit run app.py   (from inside the app/ directory)
+
+This file is the presentation layer only. All scoring/geometry lives in
+scoring.py and all data loading in data_loader.py — this module just arranges
+and styles them. It works whether scoring.py returns the plain frontend rows or
+the richer analysis rows (extra fields like `score` / `low_confidence` are read
+defensively with .get()).
 """
 
 from __future__ import annotations
@@ -98,6 +104,25 @@ def _supports_row_select() -> bool:
 
 SUPPORTS_ROW_SELECT = _supports_row_select()
 
+_BASE_LAYOUT = dict(
+    font=dict(family=FONT, color=INK_2, size=13),
+    paper_bgcolor="rgba(0,0,0,0)",
+    plot_bgcolor="rgba(0,0,0,0)",
+    margin=dict(l=8, r=16, t=8, b=8),
+    hoverlabel=dict(bgcolor=INK, font=dict(color="#ffffff", family=FONT, size=12), bordercolor=INK),
+)
+
+
+def _round_bars(fig: go.Figure) -> None:
+    """Best-effort 4px rounded data-ends; silently skipped on older Plotly."""
+    for setter in (lambda: fig.update_traces(marker_cornerradius=4),
+                   lambda: fig.update_layout(barcornerradius=4)):
+        try:
+            setter()
+            return
+        except Exception:  # noqa: BLE001
+            continue
+
 
 def build_rank_chart(names: list[str], values: list[float], axis_title: str, suffix: str = "") -> go.Figure:
     """Horizontal bar chart, one color ramp keyed to rank: lightest = lowest,
@@ -106,15 +131,16 @@ def build_rank_chart(names: list[str], values: list[float], axis_title: str, suf
     rather than one color each."""
     pairs = sorted(zip(names, values), key=lambda p: p[1])  # ascending -> bottom to top
     colors = rank_colors(len(pairs))
+    ys = [n for n, _ in pairs]
+    xs = [v for _, v in pairs]
     fig = go.Figure(
         go.Bar(
-            x=[v for _, v in pairs],
-            y=[n for n, _ in pairs],
-            orientation="h",
-            marker_color=colors,
-            text=[f"{v:.1f}{suffix}" for _, v in pairs],
-            textposition="outside",
+            x=xs, y=ys, orientation="h",
+            marker=dict(color=colors, line=dict(width=0)),
+            text=[f"{v:.1f}{suffix}" for v in xs],
+            textposition="outside", textfont=dict(color=INK_2, family=FONT, size=12),
             cliponaxis=False,
+            hovertemplate="<b>%{y}</b><br>" + axis_title + ": %{x:.1f}" + suffix + "<extra></extra>",
         )
     )
     fig.update_layout(
@@ -125,6 +151,7 @@ def build_rank_chart(names: list[str], values: list[float], axis_title: str, suf
         plot_bgcolor="rgba(0,0,0,0)",
         height=max(320, 34 * len(pairs)),
     )
+    _round_bars(fig)
     return fig
 
 
@@ -199,16 +226,38 @@ def _selection_changed(current: list, remember_key: str) -> bool:
 
 
 def select_row(df: pd.DataFrame, name_col: str, key: str) -> str:
-    """Row-select on the ranked table if this Streamlit version supports it,
-    else fall back to a plain selectbox of names."""
+    """Row-select on the ranked table if supported, else a plain selectbox."""
     if SUPPORTS_ROW_SELECT:
-        event = st.dataframe(df, hide_index=True, on_select="rerun", selection_mode="single-row", key=key)
+        event = st.dataframe(
+            df, hide_index=True, on_select="rerun",
+            selection_mode="single-row", key=key, use_container_width=True,
+        )
         rows = event["selection"]["rows"] if event else []
         row = rows[0] if rows else 0
         return df.iloc[row][name_col]
-    st.dataframe(df, hide_index=True)
+    st.dataframe(df, hide_index=True, use_container_width=True)
     return st.selectbox("Pick a row to inspect", df[name_col].tolist(), key=f"{key}_select")
 
+
+def brief_card(text: str, empty_msg: str) -> None:
+    with st.container(border=True):
+        st.markdown("**Research brief**")
+        st.write(text if text else f"_{empty_msg}_")
+
+
+def view_toggle(key: str) -> str:
+    """Interactive Chart/Table switch, using segmented_control when available."""
+    if hasattr(st, "segmented_control"):
+        return st.segmented_control("View", ["Chart", "Table"], default="Chart",
+                                    key=key, label_visibility="collapsed") or "Chart"
+    return st.radio("View", ["Chart", "Table"], horizontal=True,
+                    key=key, label_visibility="collapsed")
+
+
+# --------------------------------------------------------------------------- #
+# Page
+# --------------------------------------------------------------------------- #
+inject_css()
 
 data = load_data()
 regions = data["regions"]
@@ -240,8 +289,29 @@ if national:
 
 ai_advisor.render(data)
 
+st.markdown(
+    """
+    <div class="disclaimer">
+      <span class="tag">Note</span>
+      <b>Not investment advice.</b> This is a screening tool that ranks regions from
+      public statistics as a starting point for research — not a recommendation to buy or invest.
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+if national:
+    k1, k2, k3 = st.columns(3)
+    k1.metric("GDP growth", f"{national.get('gdp_growth_pct', '—')}%")
+    k2.metric("FDI (% of GDP)", f"{national.get('fdi_pct_gdp', '—')}%")
+    k3.metric("Data updated", str(national.get("last_updated", "—")))
+
+st.write("")
 tab_property, tab_business = st.tabs(["Buy property", "Invest in a business"])
 
+# --------------------------------------------------------------------------- #
+# PROPERTY
+# --------------------------------------------------------------------------- #
 with tab_property:
     st.subheader("Which region is worth researching for a property purchase?")
 
