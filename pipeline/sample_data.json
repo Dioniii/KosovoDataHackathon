@@ -1,0 +1,146 @@
+{
+  "national": {
+    "gdp_growth_pct": 4.2,
+    "fdi_pct_gdp": 7.8,
+    "last_updated": "2025-12-31"
+  },
+  "regions": [
+    {
+      "name": "Prishtinë",
+      "aliases": ["Prishtina", "Prishtina Region"],
+      "coordinates": { "lat": 42.6629, "lon": 21.1655 },
+      "investment_yoy_pct": 8.4,
+      "tourism_gap_score": 0.42,
+      "housing_bucket": "prishtina"
+    },
+    {
+      "name": "Prizren",
+      "aliases": ["Prizren Region"],
+      "coordinates": { "lat": 42.2139, "lon": 20.7397 },
+      "investment_yoy_pct": 5.1,
+      "tourism_gap_score": 0.71,
+      "housing_bucket": "rest"
+    },
+    {
+      "name": "Pejë",
+      "aliases": ["Peja", "Peja Region"],
+      "coordinates": { "lat": 42.6591, "lon": 20.2883 },
+      "investment_yoy_pct": 6.7,
+      "tourism_gap_score": 0.85,
+      "housing_bucket": "rest"
+    },
+    {
+      "name": "Gjakovë",
+      "aliases": ["Gjakova", "Gjakova Region"],
+      "coordinates": { "lat": 42.3803, "lon": 20.4308 },
+      "investment_yoy_pct": 3.9,
+      "tourism_gap_score": 0.38,
+      "housing_bucket": "rest"
+    },
+    {
+      "name": "Gjilan",
+      "aliases": ["Gjilani", "Gnjilane", "Gjilan Region"],
+      "coordinates": { "lat": 42.4636, "lon": 21.4694 },
+      "investment_yoy_pct": 4.5,
+      "tourism_gap_score": 0.22,
+      "housing_bucket": "rest"
+    },
+    {
+      "name": "Ferizaj",
+      "aliases": ["Ferizaj Region", "Uroševac"],
+      "coordinates": { "lat": 42.3706, "lon": 21.1553 },
+      "investment_yoy_pct": 5.8,
+      "tourism_gap_score": 0.29,
+      "housing_bucket": "rest"
+    },
+    {
+      "name": "Mitrovicë",
+      "aliases": ["Mitrovica", "Mitrovica Region"],
+      "coordinates": { "lat": 42.8914, "lon": 20.8660 },
+      "investment_yoy_pct": 2.6,
+      "tourism_gap_score": 0.31,
+      "housing_bucket": "rest"
+    }
+  ],
+  "housing": {
+    "prishtina": { "index_2018_base": 100, "index_latest": 187.4 },
+    "rest": { "index_2018_base": 100, "index_latest": 142.9 }
+  },
+  "business_sectors": [
+    {
+      "code": "I",
+      "name": "Accommodation and food service",
+      "by_municipality": {
+        "Prishtinë": { "count_latest": 1840, "growth_pct": 6.2 },
+        "Prizren": { "count_latest": 1210, "growth_pct": 9.4 },
+        "Pejë": { "count_latest": 860, "growth_pct": 11.1 },
+        "Gjakovë": { "count_latest": 430, "growth_pct": 4.8 },
+        "Gjilan": { "count_latest": 520, "growth_pct": 3.1 },
+        "Ferizaj": { "count_latest": 610, "growth_pct": 5.5 },
+        "Mitrovicë": { "count_latest": 390, "growth_pct": 1.9 },
+        "Podujevë": { "count_latest": 180, "growth_pct": 4.0 }
+      }
+    },
+    {
+      "code": "G",
+      "name": "Wholesale and retail trade",
+      "by_municipality": {
+        "Prishtinë": { "count_latest": 6420, "growth_pct": 3.8 },
+        "Prizren": { "count_latest": 3150, "growth_pct": 4.2 },
+        "Pejë": { "count_latest": 1980, "growth_pct": 3.5 },
+        "Gjakovë": { "count_latest": 1540, "growth_pct": 2.9 },
+        "Gjilan": { "count_latest": 1720, "growth_pct": 3.3 },
+        "Ferizaj": { "count_latest": 1610, "growth_pct": 4.0 },
+        "Mitrovicë": { "count_latest": 1230, "growth_pct": 1.5 },
+        "Vushtrri": { "count_latest": 690, "growth_pct": 2.8 }
+      }
+    },
+    {
+      "code": "L",
+      "name": "Real estate activities",
+      "by_municipality": {
+        "Prishtinë": { "count_latest": 980, "growth_pct": 12.4 },
+        "Prizren": { "count_latest": 310, "growth_pct": 8.7 },
+        "Pejë": { "count_latest": 240, "growth_pct": 9.9 },
+        "Gjakovë": { "count_latest": 150, "growth_pct": 6.1 },
+        "Gjilan": { "count_latest": 190, "growth_pct": 5.4 },
+        "Ferizaj": { "count_latest": 170, "growth_pct": 6.8 },
+        "Mitrovicë": { "count_latest": 110, "growth_pct": 2.2 },
+        "Lipjan": { "count_latest": 90, "growth_pct": 7.5 }
+      }
+    }
+  ],
+  "insights": {
+    "Prishtinë": "",
+    "Prizren": "",
+    "Pejë": "",
+    "Gjakovë": "",
+    "Gjilan": "",
+    "Ferizaj": "",
+    "Mitrovicë": "",
+    "sector:I:Prishtinë": "",
+    "sector:I:Prizren": "",
+    "sector:I:Pejë": "",
+    "sector:I:Gjakovë": "",
+    "sector:I:Gjilan": "",
+    "sector:I:Ferizaj": "",
+    "sector:I:Mitrovicë": "",
+    "sector:I:Podujevë": "",
+    "sector:G:Prishtinë": "",
+    "sector:G:Prizren": "",
+    "sector:G:Pejë": "",
+    "sector:G:Gjakovë": "",
+    "sector:G:Gjilan": "",
+    "sector:G:Ferizaj": "",
+    "sector:G:Mitrovicë": "",
+    "sector:G:Vushtrri": "",
+    "sector:L:Prishtinë": "",
+    "sector:L:Prizren": "",
+    "sector:L:Pejë": "",
+    "sector:L:Gjakovë": "",
+    "sector:L:Gjilan": "",
+    "sector:L:Ferizaj": "",
+    "sector:L:Mitrovicë": "",
+    "sector:L:Lipjan": ""
+  }
+}
