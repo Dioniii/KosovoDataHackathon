@@ -67,5 +67,13 @@ the live app's data current on a schedule without adding a live API call to the 
   calls, and it has no native "commit back to GitHub" step the way GitHub Actions does.
 
 **Status:** not implemented. Worth doing if the demo needs to stay current over multiple days;
+
+
+
+
+## LLM integration
+## Page Translation
+## Implement Cache
+## Prediction Model (Regression) - Add urgency if doesnt invest by 2027 margins arise by 20%
 skip it if this is a one-shot hackathon demo where the pipeline is just re-run manually before
 presenting.
