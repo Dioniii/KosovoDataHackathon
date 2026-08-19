@@ -1,1 +1,718 @@
-{}
+{
+  "national": {
+    "gdp_growth_pct": 3.59,
+    "fdi_pct_gdp": 10.0,
+    "last_updated": "2026-08-19"
+  },
+  "regions": [
+    {
+      "name": "Prishtinë",
+      "aliases": [
+        "Prishtina",
+        "Prishtina Region"
+      ],
+      "coordinates": {
+        "lat": 42.6629,
+        "lon": 21.1655
+      },
+      "investment_yoy_pct": -14.48,
+      "tourism_gap_score": 1.0,
+      "housing_bucket": "prishtina"
+    },
+    {
+      "name": "Prizren",
+      "aliases": [
+        "Prizreni",
+        "Prizren Region"
+      ],
+      "coordinates": {
+        "lat": 42.2139,
+        "lon": 20.7397
+      },
+      "investment_yoy_pct": -7.57,
+      "tourism_gap_score": 0.857,
+      "housing_bucket": "rest"
+    },
+    {
+      "name": "Pejë",
+      "aliases": [
+        "Peja",
+        "Peja Region"
+      ],
+      "coordinates": {
+        "lat": 42.6591,
+        "lon": 20.2883
+      },
+      "investment_yoy_pct": 4.66,
+      "tourism_gap_score": 0.219,
+      "housing_bucket": "rest"
+    },
+    {
+      "name": "Gjakovë",
+      "aliases": [
+        "Gjakova",
+        "Gjakova Region"
+      ],
+      "coordinates": {
+        "lat": 42.3803,
+        "lon": 20.4308
+      },
+      "investment_yoy_pct": 0.98,
+      "tourism_gap_score": 0.535,
+      "housing_bucket": "rest"
+    },
+    {
+      "name": "Gjilan",
+      "aliases": [
+        "Gjilani",
+        "Gnjilane",
+        "Gjilan Region"
+      ],
+      "coordinates": {
+        "lat": 42.4636,
+        "lon": 21.4694
+      },
+      "investment_yoy_pct": -25.61,
+      "tourism_gap_score": 0.513,
+      "housing_bucket": "rest"
+    },
+    {
+      "name": "Ferizaj",
+      "aliases": [
+        "Ferizaji",
+        "Ferizaj Region",
+        "Uroševac"
+      ],
+      "coordinates": {
+        "lat": 42.3706,
+        "lon": 21.1553
+      },
+      "investment_yoy_pct": -10.67,
+      "tourism_gap_score": 0.0,
+      "housing_bucket": "rest"
+    },
+    {
+      "name": "Mitrovicë",
+      "aliases": [
+        "Mitrovica",
+        "Mitrovica Region"
+      ],
+      "coordinates": {
+        "lat": 42.8914,
+        "lon": 20.866
+      },
+      "investment_yoy_pct": -10.15,
+      "tourism_gap_score": 0.514,
+      "housing_bucket": "rest"
+    }
+  ],
+  "housing": {
+    "prishtina": {
+      "index_2018_base": 100,
+      "index_latest": 130.0
+    },
+    "rest": {
+      "index_2018_base": 100,
+      "index_latest": 130.6
+    }
+  },
+  "business_sectors": [
+    {
+      "code": "I",
+      "name": "Accommodation and food service",
+      "by_municipality": {
+        "Deçan": {
+          "count_latest": 5,
+          "growth_pct": 66.67
+        },
+        "Gjakovë": {
+          "count_latest": 10,
+          "growth_pct": -23.08
+        },
+        "Gllogoc": {
+          "count_latest": 3,
+          "growth_pct": 50.0
+        },
+        "Gjilan": {
+          "count_latest": 15,
+          "growth_pct": 25.0
+        },
+        "Dragash": {
+          "count_latest": 1,
+          "growth_pct": 0.0
+        },
+        "Istog": {
+          "count_latest": 2,
+          "growth_pct": 0.0
+        },
+        "Kaçanik": {
+          "count_latest": 2,
+          "growth_pct": -33.33
+        },
+        "Klinë": {
+          "count_latest": 2,
+          "growth_pct": 0.0
+        },
+        "F.Kosovë": {
+          "count_latest": 7,
+          "growth_pct": -12.5
+        },
+        "Kamenicë": {
+          "count_latest": 0,
+          "growth_pct": -100.0
+        },
+        "Mitrovicë": {
+          "count_latest": 11,
+          "growth_pct": 37.5
+        },
+        "Leposaviq": {
+          "count_latest": 0,
+          "growth_pct": 0.0
+        },
+        "Lipjan": {
+          "count_latest": 5,
+          "growth_pct": 150.0
+        },
+        "Novobërdë": {
+          "count_latest": 1,
+          "growth_pct": -50.0
+        },
+        "Obiliq": {
+          "count_latest": 1,
+          "growth_pct": 0.0
+        },
+        "Rahovec": {
+          "count_latest": 2,
+          "growth_pct": -66.67
+        },
+        "Pejë": {
+          "count_latest": 8,
+          "growth_pct": -60.0
+        },
+        "Podujevë": {
+          "count_latest": 5,
+          "growth_pct": -16.67
+        },
+        "Prishtinë": {
+          "count_latest": 80,
+          "growth_pct": 17.65
+        },
+        "Prizren": {
+          "count_latest": 23,
+          "growth_pct": 109.09
+        },
+        "Skenderaj": {
+          "count_latest": 1,
+          "growth_pct": -66.67
+        },
+        "Shtime": {
+          "count_latest": 1,
+          "growth_pct": -50.0
+        },
+        "Shtërpce": {
+          "count_latest": 3,
+          "growth_pct": 0.0
+        },
+        "Suharekë": {
+          "count_latest": 3,
+          "growth_pct": -25.0
+        },
+        "Ferizaj": {
+          "count_latest": 29,
+          "growth_pct": 3.57
+        },
+        "Viti": {
+          "count_latest": 7,
+          "growth_pct": 75.0
+        },
+        "Vushtrri": {
+          "count_latest": 8,
+          "growth_pct": 0.0
+        },
+        "Zubin Potok": {
+          "count_latest": 0,
+          "growth_pct": 0.0
+        },
+        "Zveqan": {
+          "count_latest": 1,
+          "growth_pct": 0.0
+        },
+        "Malishevë": {
+          "count_latest": 1,
+          "growth_pct": 0.0
+        },
+        "Juniku": {
+          "count_latest": 0,
+          "growth_pct": 0.0
+        },
+        "Mamushë": {
+          "count_latest": 0,
+          "growth_pct": 0.0
+        },
+        "Hani i Elezit": {
+          "count_latest": 1,
+          "growth_pct": 0.0
+        },
+        "Graçanica": {
+          "count_latest": 4,
+          "growth_pct": -42.86
+        },
+        "Ranillug": {
+          "count_latest": 0,
+          "growth_pct": 0.0
+        },
+        "Partesh": {
+          "count_latest": 0,
+          "growth_pct": 0.0
+        },
+        "Kllokot": {
+          "count_latest": 0,
+          "growth_pct": 0.0
+        },
+        "Mitr. Veriore": {
+          "count_latest": 2,
+          "growth_pct": 0.0
+        }
+      }
+    },
+    {
+      "code": "G",
+      "name": "Wholesale and retail trade",
+      "by_municipality": {
+        "Deçan": {
+          "count_latest": 4,
+          "growth_pct": -42.86
+        },
+        "Gjakovë": {
+          "count_latest": 25,
+          "growth_pct": 31.58
+        },
+        "Gllogoc": {
+          "count_latest": 14,
+          "growth_pct": -26.32
+        },
+        "Gjilan": {
+          "count_latest": 37,
+          "growth_pct": 12.12
+        },
+        "Dragash": {
+          "count_latest": 2,
+          "growth_pct": 0.0
+        },
+        "Istog": {
+          "count_latest": 8,
+          "growth_pct": 33.33
+        },
+        "Kaçanik": {
+          "count_latest": 11,
+          "growth_pct": -15.38
+        },
+        "Klinë": {
+          "count_latest": 10,
+          "growth_pct": 150.0
+        },
+        "F.Kosovë": {
+          "count_latest": 42,
+          "growth_pct": 5.0
+        },
+        "Kamenicë": {
+          "count_latest": 2,
+          "growth_pct": -50.0
+        },
+        "Mitrovicë": {
+          "count_latest": 23,
+          "growth_pct": -11.54
+        },
+        "Leposaviq": {
+          "count_latest": 8,
+          "growth_pct": 0.0
+        },
+        "Lipjan": {
+          "count_latest": 22,
+          "growth_pct": 37.5
+        },
+        "Novobërdë": {
+          "count_latest": 3,
+          "growth_pct": 50.0
+        },
+        "Obiliq": {
+          "count_latest": 10,
+          "growth_pct": 0.0
+        },
+        "Rahovec": {
+          "count_latest": 6,
+          "growth_pct": -25.0
+        },
+        "Pejë": {
+          "count_latest": 23,
+          "growth_pct": -23.33
+        },
+        "Podujevë": {
+          "count_latest": 25,
+          "growth_pct": 19.05
+        },
+        "Prishtinë": {
+          "count_latest": 229,
+          "growth_pct": 28.65
+        },
+        "Prizren": {
+          "count_latest": 55,
+          "growth_pct": 7.84
+        },
+        "Skenderaj": {
+          "count_latest": 3,
+          "growth_pct": -57.14
+        },
+        "Shtime": {
+          "count_latest": 9,
+          "growth_pct": 200.0
+        },
+        "Shtërpce": {
+          "count_latest": 3,
+          "growth_pct": 200.0
+        },
+        "Suharekë": {
+          "count_latest": 12,
+          "growth_pct": 33.33
+        },
+        "Ferizaj": {
+          "count_latest": 67,
+          "growth_pct": -15.19
+        },
+        "Viti": {
+          "count_latest": 11,
+          "growth_pct": 0.0
+        },
+        "Vushtrri": {
+          "count_latest": 22,
+          "growth_pct": 46.67
+        },
+        "Zubin Potok": {
+          "count_latest": 0,
+          "growth_pct": -100.0
+        },
+        "Zveqan": {
+          "count_latest": 1,
+          "growth_pct": 0.0
+        },
+        "Malishevë": {
+          "count_latest": 8,
+          "growth_pct": 60.0
+        },
+        "Juniku": {
+          "count_latest": 0,
+          "growth_pct": -100.0
+        },
+        "Mamushë": {
+          "count_latest": 0,
+          "growth_pct": -100.0
+        },
+        "Hani i Elezit": {
+          "count_latest": 0,
+          "growth_pct": -100.0
+        },
+        "Graçanica": {
+          "count_latest": 13,
+          "growth_pct": -13.33
+        },
+        "Ranillug": {
+          "count_latest": 0,
+          "growth_pct": -100.0
+        },
+        "Partesh": {
+          "count_latest": 1,
+          "growth_pct": 0.0
+        },
+        "Kllokot": {
+          "count_latest": 0,
+          "growth_pct": -100.0
+        },
+        "Mitr. Veriore": {
+          "count_latest": 9,
+          "growth_pct": 800.0
+        }
+      }
+    },
+    {
+      "code": "L",
+      "name": "Real estate activities",
+      "by_municipality": {
+        "Deçan": {
+          "count_latest": 0,
+          "growth_pct": 0.0
+        },
+        "Gjakovë": {
+          "count_latest": 0,
+          "growth_pct": -100.0
+        },
+        "Gllogoc": {
+          "count_latest": 1,
+          "growth_pct": 0.0
+        },
+        "Gjilan": {
+          "count_latest": 4,
+          "growth_pct": 100.0
+        },
+        "Dragash": {
+          "count_latest": 0,
+          "growth_pct": 0.0
+        },
+        "Istog": {
+          "count_latest": 0,
+          "growth_pct": 0.0
+        },
+        "Kaçanik": {
+          "count_latest": 0,
+          "growth_pct": 0.0
+        },
+        "Klinë": {
+          "count_latest": 0,
+          "growth_pct": 0.0
+        },
+        "F.Kosovë": {
+          "count_latest": 4,
+          "growth_pct": 300.0
+        },
+        "Kamenicë": {
+          "count_latest": 0,
+          "growth_pct": -100.0
+        },
+        "Mitrovicë": {
+          "count_latest": 0,
+          "growth_pct": 0.0
+        },
+        "Leposaviq": {
+          "count_latest": 0,
+          "growth_pct": 0.0
+        },
+        "Lipjan": {
+          "count_latest": 3,
+          "growth_pct": 0.0
+        },
+        "Novobërdë": {
+          "count_latest": 0,
+          "growth_pct": 0.0
+        },
+        "Obiliq": {
+          "count_latest": 1,
+          "growth_pct": 0.0
+        },
+        "Rahovec": {
+          "count_latest": 0,
+          "growth_pct": 0.0
+        },
+        "Pejë": {
+          "count_latest": 4,
+          "growth_pct": 100.0
+        },
+        "Podujevë": {
+          "count_latest": 0,
+          "growth_pct": -100.0
+        },
+        "Prishtinë": {
+          "count_latest": 28,
+          "growth_pct": -9.68
+        },
+        "Prizren": {
+          "count_latest": 3,
+          "growth_pct": -25.0
+        },
+        "Skenderaj": {
+          "count_latest": 0,
+          "growth_pct": 0.0
+        },
+        "Shtime": {
+          "count_latest": 0,
+          "growth_pct": 0.0
+        },
+        "Shtërpce": {
+          "count_latest": 0,
+          "growth_pct": 0.0
+        },
+        "Suharekë": {
+          "count_latest": 2,
+          "growth_pct": 0.0
+        },
+        "Ferizaj": {
+          "count_latest": 4,
+          "growth_pct": 0.0
+        },
+        "Viti": {
+          "count_latest": 0,
+          "growth_pct": 0.0
+        },
+        "Vushtrri": {
+          "count_latest": 0,
+          "growth_pct": 0.0
+        },
+        "Zubin Potok": {
+          "count_latest": 0,
+          "growth_pct": 0.0
+        },
+        "Zveqan": {
+          "count_latest": 0,
+          "growth_pct": 0.0
+        },
+        "Malishevë": {
+          "count_latest": 0,
+          "growth_pct": 0.0
+        },
+        "Juniku": {
+          "count_latest": 0,
+          "growth_pct": 0.0
+        },
+        "Mamushë": {
+          "count_latest": 0,
+          "growth_pct": 0.0
+        },
+        "Hani i Elezit": {
+          "count_latest": 0,
+          "growth_pct": 0.0
+        },
+        "Graçanica": {
+          "count_latest": 2,
+          "growth_pct": 100.0
+        },
+        "Ranillug": {
+          "count_latest": 0,
+          "growth_pct": 0.0
+        },
+        "Partesh": {
+          "count_latest": 0,
+          "growth_pct": 0.0
+        },
+        "Kllokot": {
+          "count_latest": 0,
+          "growth_pct": 0.0
+        },
+        "Mitr. Veriore": {
+          "count_latest": 0,
+          "growth_pct": 0.0
+        }
+      }
+    }
+  ],
+  "insights": {
+    "Prishtinë": "",
+    "Prizren": "",
+    "Pejë": "",
+    "Gjakovë": "",
+    "Gjilan": "",
+    "Ferizaj": "",
+    "Mitrovicë": "",
+    "sector:I:Deçan": "",
+    "sector:I:Gjakovë": "",
+    "sector:I:Gllogoc": "",
+    "sector:I:Gjilan": "",
+    "sector:I:Dragash": "",
+    "sector:I:Istog": "",
+    "sector:I:Kaçanik": "",
+    "sector:I:Klinë": "",
+    "sector:I:F.Kosovë": "",
+    "sector:I:Kamenicë": "",
+    "sector:I:Mitrovicë": "",
+    "sector:I:Leposaviq": "",
+    "sector:I:Lipjan": "",
+    "sector:I:Novobërdë": "",
+    "sector:I:Obiliq": "",
+    "sector:I:Rahovec": "",
+    "sector:I:Pejë": "",
+    "sector:I:Podujevë": "",
+    "sector:I:Prishtinë": "",
+    "sector:I:Prizren": "",
+    "sector:I:Skenderaj": "",
+    "sector:I:Shtime": "",
+    "sector:I:Shtërpce": "",
+    "sector:I:Suharekë": "",
+    "sector:I:Ferizaj": "",
+    "sector:I:Viti": "",
+    "sector:I:Vushtrri": "",
+    "sector:I:Zubin Potok": "",
+    "sector:I:Zveqan": "",
+    "sector:I:Malishevë": "",
+    "sector:I:Juniku": "",
+    "sector:I:Mamushë": "",
+    "sector:I:Hani i Elezit": "",
+    "sector:I:Graçanica": "",
+    "sector:I:Ranillug": "",
+    "sector:I:Partesh": "",
+    "sector:I:Kllokot": "",
+    "sector:I:Mitr. Veriore": "",
+    "sector:G:Deçan": "",
+    "sector:G:Gjakovë": "",
+    "sector:G:Gllogoc": "",
+    "sector:G:Gjilan": "",
+    "sector:G:Dragash": "",
+    "sector:G:Istog": "",
+    "sector:G:Kaçanik": "",
+    "sector:G:Klinë": "",
+    "sector:G:F.Kosovë": "",
+    "sector:G:Kamenicë": "",
+    "sector:G:Mitrovicë": "",
+    "sector:G:Leposaviq": "",
+    "sector:G:Lipjan": "",
+    "sector:G:Novobërdë": "",
+    "sector:G:Obiliq": "",
+    "sector:G:Rahovec": "",
+    "sector:G:Pejë": "",
+    "sector:G:Podujevë": "",
+    "sector:G:Prishtinë": "",
+    "sector:G:Prizren": "",
+    "sector:G:Skenderaj": "",
+    "sector:G:Shtime": "",
+    "sector:G:Shtërpce": "",
+    "sector:G:Suharekë": "",
+    "sector:G:Ferizaj": "",
+    "sector:G:Viti": "",
+    "sector:G:Vushtrri": "",
+    "sector:G:Zubin Potok": "",
+    "sector:G:Zveqan": "",
+    "sector:G:Malishevë": "",
+    "sector:G:Juniku": "",
+    "sector:G:Mamushë": "",
+    "sector:G:Hani i Elezit": "",
+    "sector:G:Graçanica": "",
+    "sector:G:Ranillug": "",
+    "sector:G:Partesh": "",
+    "sector:G:Kllokot": "",
+    "sector:G:Mitr. Veriore": "",
+    "sector:L:Deçan": "",
+    "sector:L:Gjakovë": "",
+    "sector:L:Gllogoc": "",
+    "sector:L:Gjilan": "",
+    "sector:L:Dragash": "",
+    "sector:L:Istog": "",
+    "sector:L:Kaçanik": "",
+    "sector:L:Klinë": "",
+    "sector:L:F.Kosovë": "",
+    "sector:L:Kamenicë": "",
+    "sector:L:Mitrovicë": "",
+    "sector:L:Leposaviq": "",
+    "sector:L:Lipjan": "",
+    "sector:L:Novobërdë": "",
+    "sector:L:Obiliq": "",
+    "sector:L:Rahovec": "",
+    "sector:L:Pejë": "",
+    "sector:L:Podujevë": "",
+    "sector:L:Prishtinë": "",
+    "sector:L:Prizren": "",
+    "sector:L:Skenderaj": "",
+    "sector:L:Shtime": "",
+    "sector:L:Shtërpce": "",
+    "sector:L:Suharekë": "",
+    "sector:L:Ferizaj": "",
+    "sector:L:Viti": "",
+    "sector:L:Vushtrri": "",
+    "sector:L:Zubin Potok": "",
+    "sector:L:Zveqan": "",
+    "sector:L:Malishevë": "",
+    "sector:L:Juniku": "",
+    "sector:L:Mamushë": "",
+    "sector:L:Hani i Elezit": "",
+    "sector:L:Graçanica": "",
+    "sector:L:Ranillug": "",
+    "sector:L:Partesh": "",
+    "sector:L:Kllokot": "",
+    "sector:L:Mitr. Veriore": ""
+  }
+}
