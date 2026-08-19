@@ -109,11 +109,279 @@
   "housing": {
     "prishtina": {
       "index_2018_base": 100,
-      "index_latest": 130.0
+      "index_latest": 130.0,
+      "history": [
+        {
+          "period": "2018Q1",
+          "index": 102.1
+        },
+        {
+          "period": "2018Q2",
+          "index": 102.1
+        },
+        {
+          "period": "2018Q3",
+          "index": 96.6
+        },
+        {
+          "period": "2018Q4",
+          "index": 99.2
+        },
+        {
+          "period": "2019Q1",
+          "index": 102.5
+        },
+        {
+          "period": "2019Q2",
+          "index": 101.4
+        },
+        {
+          "period": "2019Q3",
+          "index": 101.4
+        },
+        {
+          "period": "2019Q4",
+          "index": 101.2
+        },
+        {
+          "period": "2020Q1",
+          "index": 103.4
+        },
+        {
+          "period": "2020Q2",
+          "index": 98.4
+        },
+        {
+          "period": "2020Q3",
+          "index": 101.5
+        },
+        {
+          "period": "2020Q4",
+          "index": 102.7
+        },
+        {
+          "period": "2021Q1",
+          "index": 106.2
+        },
+        {
+          "period": "2021Q2",
+          "index": 105.7
+        },
+        {
+          "period": "2021Q3",
+          "index": 107.3
+        },
+        {
+          "period": "2021Q4",
+          "index": 108.9
+        },
+        {
+          "period": "2022Q1",
+          "index": 109.5
+        },
+        {
+          "period": "2022Q2",
+          "index": 111.0
+        },
+        {
+          "period": "2022Q3",
+          "index": 113.9
+        },
+        {
+          "period": "2022Q4",
+          "index": 112.1
+        },
+        {
+          "period": "2023Q1",
+          "index": 111.4
+        },
+        {
+          "period": "2023Q2",
+          "index": 116.1
+        },
+        {
+          "period": "2023Q3",
+          "index": 113.5
+        },
+        {
+          "period": "2023Q4",
+          "index": 114.5
+        },
+        {
+          "period": "2024Q1",
+          "index": 115.2
+        },
+        {
+          "period": "2024Q2",
+          "index": 118.4
+        },
+        {
+          "period": "2024Q3",
+          "index": 120.5
+        },
+        {
+          "period": "2024Q4",
+          "index": 122.9
+        },
+        {
+          "period": "2025Q1",
+          "index": 128.2
+        },
+        {
+          "period": "2025Q2",
+          "index": 126.1
+        },
+        {
+          "period": "2025Q3",
+          "index": 122.0
+        },
+        {
+          "period": "2025Q4",
+          "index": 129.4
+        },
+        {
+          "period": "2026Q1",
+          "index": 130.0
+        }
+      ]
     },
     "rest": {
       "index_2018_base": 100,
-      "index_latest": 130.6
+      "index_latest": 130.6,
+      "history": [
+        {
+          "period": "2018Q1",
+          "index": 98.1
+        },
+        {
+          "period": "2018Q2",
+          "index": 100.4
+        },
+        {
+          "period": "2018Q3",
+          "index": 101.6
+        },
+        {
+          "period": "2018Q4",
+          "index": 100.0
+        },
+        {
+          "period": "2019Q1",
+          "index": 99.6
+        },
+        {
+          "period": "2019Q2",
+          "index": 103.3
+        },
+        {
+          "period": "2019Q3",
+          "index": 98.9
+        },
+        {
+          "period": "2019Q4",
+          "index": 108.9
+        },
+        {
+          "period": "2020Q1",
+          "index": 104.0
+        },
+        {
+          "period": "2020Q2",
+          "index": 102.3
+        },
+        {
+          "period": "2020Q3",
+          "index": 104.8
+        },
+        {
+          "period": "2020Q4",
+          "index": 101.8
+        },
+        {
+          "period": "2021Q1",
+          "index": 101.6
+        },
+        {
+          "period": "2021Q2",
+          "index": 101.6
+        },
+        {
+          "period": "2021Q3",
+          "index": 102.4
+        },
+        {
+          "period": "2021Q4",
+          "index": 101.7
+        },
+        {
+          "period": "2022Q1",
+          "index": 101.6
+        },
+        {
+          "period": "2022Q2",
+          "index": 106.5
+        },
+        {
+          "period": "2022Q3",
+          "index": 108.1
+        },
+        {
+          "period": "2022Q4",
+          "index": 108.9
+        },
+        {
+          "period": "2023Q1",
+          "index": 111.2
+        },
+        {
+          "period": "2023Q2",
+          "index": 111.3
+        },
+        {
+          "period": "2023Q3",
+          "index": 111.7
+        },
+        {
+          "period": "2023Q4",
+          "index": 114.0
+        },
+        {
+          "period": "2024Q1",
+          "index": 113.8
+        },
+        {
+          "period": "2024Q2",
+          "index": 117.2
+        },
+        {
+          "period": "2024Q3",
+          "index": 113.2
+        },
+        {
+          "period": "2024Q4",
+          "index": 116.7
+        },
+        {
+          "period": "2025Q1",
+          "index": 116.3
+        },
+        {
+          "period": "2025Q2",
+          "index": 118.1
+        },
+        {
+          "period": "2025Q3",
+          "index": 118.1
+        },
+        {
+          "period": "2025Q4",
+          "index": 123.7
+        },
+        {
+          "period": "2026Q1",
+          "index": 130.6
+        }
+      ]
     }
   },
   "business_sectors": [

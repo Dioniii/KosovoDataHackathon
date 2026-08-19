@@ -17,10 +17,10 @@ import streamlit as st
 
 import ai_advisor
 from data_loader import load_data
+from forecast import URGENCY_LABELS, attach_urgency, urgency_note
 from scoring import (
     business_trend_points,
     compute_property_ranking,
-    housing_trend_points,
     rank_business,
     rank_colors,
 )
@@ -143,6 +143,13 @@ def inject_css() -> None:
             border-radius:999px; background:#fbf1dd; color:{WARNING}; border:1px solid rgba(176,106,0,.3);
             margin-left:.4rem; vertical-align:middle; }}
 
+        .urgency {{ display:inline-block; font-size:.72rem; font-weight:700; padding:.12rem .55rem;
+            border-radius:999px; margin-left:.4rem; vertical-align:middle; border:1px solid transparent; }}
+        .urgency.high {{ background:#fdeae7; color:#a3341f; border-color:rgba(163,52,31,.3); }}
+        .urgency.medium {{ background:#fbf1dd; color:{WARNING}; border-color:rgba(176,106,0,.3); }}
+        .urgency.low {{ background:#e9f5ea; color:{GOOD}; border-color:rgba(0,99,0,.25); }}
+        .urgency.watch {{ background:#eceae4; color:{INK_2}; border-color:rgba(11,11,11,.15); }}
+
         @media (max-width: 640px) {{
             .block-container {{ padding-top:1.2rem; }}
             .hero {{ padding:1.2rem 1.2rem; }}
@@ -230,6 +237,24 @@ def build_rank_chart(names: list[str], values: list[float], axis_title: str, suf
     return fig
 
 
+def select_row(df: pd.DataFrame, name_col: str, key: str) -> str:
+    """Row-select on the ranked table if supported, else a plain selectbox."""
+    if SUPPORTS_ROW_SELECT:
+        event = st.dataframe(
+            df, hide_index=True, on_select="rerun",
+            selection_mode="single-row", key=key, use_container_width=True,
+        )
+        rows = event["selection"]["rows"] if event else []
+        row = rows[0] if rows else 0
+        return df.iloc[row][name_col]
+    st.dataframe(df, hide_index=True, use_container_width=True)
+    return st.selectbox("Pick a row to inspect", df[name_col].tolist(), key=f"{key}_select")
+
+
+def urgency_badge_html(tier: str) -> str:
+    return f'<span class="urgency {tier}">{URGENCY_LABELS.get(tier, tier)}</span>'
+
+
 def build_trend_chart(points: list[tuple[str, float]], y_title: str) -> go.Figure:
     labels = [p[0] for p in points]
     values = [p[1] for p in points]
@@ -250,20 +275,6 @@ def build_trend_chart(points: list[tuple[str, float]], y_title: str) -> go.Figur
         height=270, hovermode="x unified",
     )
     return fig
-
-
-def select_row(df: pd.DataFrame, name_col: str, key: str) -> str:
-    """Row-select on the ranked table if supported, else a plain selectbox."""
-    if SUPPORTS_ROW_SELECT:
-        event = st.dataframe(
-            df, hide_index=True, on_select="rerun",
-            selection_mode="single-row", key=key, use_container_width=True,
-        )
-        rows = event["selection"]["rows"] if event else []
-        row = rows[0] if rows else 0
-        return df.iloc[row][name_col]
-    st.dataframe(df, hide_index=True, use_container_width=True)
-    return st.selectbox("Pick a row to inspect", df[name_col].tolist(), key=f"{key}_select")
 
 
 def brief_card(text: str, empty_msg: str) -> None:
@@ -361,14 +372,25 @@ with tab_property:
         st.caption("Lower-tier segment selected — Prishtinë (highest price index) is excluded.")
 
     ranking = compute_property_ranking(regions, anchor_name, w_momentum, w_tourism, exclude_prishtina)
+    ranking = attach_urgency(ranking, housing)
 
     if not ranking:
         st.warning("No regions to rank with the current filters.")
     else:
         st.markdown("#### Top picks for your inputs")
-        podium([{"name": r["name"],
-                 "value": f"score {r['personalizedScore']:.1f}/100",
-                 "pct": r["personalizedScore"]} for r in ranking])
+        podium([{
+            "name": r["name"],
+            "value": (
+                f"score {r['personalizedScore']:.1f}/100"
+                + (urgency_badge_html(r["forecast"]["urgency"]) if r["forecast"] else "")
+            ),
+            "pct": r["personalizedScore"],
+        } for r in ranking])
+        if any(r["forecast"] and r["forecast"]["urgency"] == "high" for r in ranking):
+            st.caption(
+                "🔥 **High urgency** = our 1-year price forecast for that segment is "
+                "trending up fast. Select a region below for the full note."
+            )
 
         left, right = st.columns([3, 1])
         left.markdown("**Full ranking**")
@@ -382,31 +404,53 @@ with tab_property:
                 use_container_width=True, key="property_chart",
             )
 
-        table_df = pd.DataFrame(ranking)[
-            ["name", "personalizedScore", "momentumScore", "investment_yoy_pct", "tourism_gap_score", "distance_km"]
-        ].round(2)
+        table_rows = [
+            {
+                "name": r["name"],
+                "personalizedScore": r["personalizedScore"],
+                "momentumScore": r["momentumScore"],
+                "investment_yoy_pct": r["investment_yoy_pct"],
+                "tourism_gap_score": r["tourism_gap_score"],
+                "distance_km": r["distance_km"],
+                "predicted_yoy_pct": r["forecast"]["predicted_yoy_pct"] if r["forecast"] else None,
+                "urgency": URGENCY_LABELS.get(r["forecast"]["urgency"], "—") if r["forecast"] else "—",
+            }
+            for r in ranking
+        ]
+        table_df = pd.DataFrame(table_rows).round(2)
         table_df.columns = ["Region", "Personalized score", "Momentum score",
-                            "Investment YoY %", "Tourism gap (0-1)", "Distance (km)"]
+                            "Investment YoY %", "Tourism gap (0-1)", "Distance (km)",
+                            "Predicted price YoY % (1yr)", "Urgency"]
 
-        st.caption("Select a region below to see its trend and research brief.")
+        st.caption("Select a region below to see its price outlook and research brief.")
         selected_name = select_row(table_df, "Region", key="property_table")
         detail = next(r for r in ranking if r["name"] == selected_name)
         region_obj = next(r for r in regions if r["name"] == selected_name)
+        forecast = detail["forecast"]
 
-        st.markdown(f"### {selected_name}")
+        badge_html = urgency_badge_html(forecast["urgency"]) if forecast else ""
+        st.markdown(f"### {selected_name}{badge_html}", unsafe_allow_html=True)
         avg_score = sum(r["personalizedScore"] for r in ranking) / len(ranking)
-        mcol1, mcol2 = st.columns(2)
+        mcol1, mcol2, mcol3 = st.columns(3)
         mcol1.metric("Personalized score", f"{detail['personalizedScore']:.1f}",
                      delta=f"{detail['personalizedScore'] - avg_score:+.1f} vs. shown avg")
         mcol2.metric("Investment (construction share) YoY", f"{detail['investment_yoy_pct']:.1f} pts")
+        if forecast:
+            mcol3.metric("Predicted price index (1yr)", f"{forecast['predicted_index']:.1f}",
+                         delta=f"{forecast['predicted_yoy_pct']:+.1f}% vs. now")
+        else:
+            mcol3.metric("Predicted price index (1yr)", "—")
 
-        c_chart, c_brief = st.columns([1, 1])
-        with c_chart:
-            st.plotly_chart(
-                build_trend_chart(housing_trend_points(region_obj["housing_bucket"], housing),
-                                  "Housing price index (2018 = 100)"),
-                use_container_width=True, key="property_trend",
-            )
+        c_urgency, c_brief = st.columns([1, 1])
+        with c_urgency:
+            with st.container(border=True):
+                st.markdown("**Price outlook**")
+                st.markdown(urgency_note(forecast, region_obj["housing_bucket"]))
+                if forecast:
+                    st.caption(
+                        f"Linear trend fit on quarterly price history, fit quality "
+                        f"R²={forecast['r_squared']:.2f}. A screening signal, not a valuation."
+                    )
         with c_brief:
             brief_card(insights.get(selected_name, ""), "No research brief yet for this region.")
 

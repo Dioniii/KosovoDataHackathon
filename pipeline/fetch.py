@@ -345,11 +345,29 @@ def build_regions() -> list[dict]:
     return regions
 
 
+def _quarterly_periods(metadata: dict, var_code: str) -> list[tuple[str, str]]:
+    """(code, label) for this variable's actual "YYYYQn" entries, oldest first.
+
+    The source table mixes quarterly rows ("2019Q3") with annual-average rows
+    ("Annual average 2019") in the same variable — only the former form a
+    regular time series a trend can be fit to, so the latter are dropped here.
+    """
+    var = px_variable(metadata, var_code)
+    parsed = []
+    for code, text in zip(var["values"], var["valueTexts"]):
+        m = re.match(r"^(\d{4})Q([1-4])$", text.strip())
+        if m:
+            year, quarter = int(m.group(1)), int(m.group(2))
+            parsed.append((code, text.strip(), year * 4 + quarter))
+    parsed.sort(key=lambda p: p[2])
+    return [(code, label) for code, label, _ in parsed]
+
+
 def build_housing() -> dict:
     table = "Prices/Indeksi i Çmimeve të Pronës Banesore/IPBN02.px"
     metadata = px_metadata(table)
-    year_quarter = px_variable(metadata, "Year/quarter")
-    all_codes = year_quarter["values"]
+    periods = _quarterly_periods(metadata, "Year/quarter")
+    period_codes = [code for code, _ in periods]
 
     pristina_var = px_resolve_code(
         metadata, "Variables", lambda t: "pristina" in t.lower() and t.lower().startswith("index")
@@ -363,7 +381,7 @@ def build_housing() -> dict:
     data = px_query(
         table,
         [
-            {"code": "Year/quarter", "selection": {"filter": "item", "values": all_codes}},
+            {"code": "Year/quarter", "selection": {"filter": "item", "values": period_codes}},
             {
                 "code": "Variables",
                 "selection": {"filter": "item", "values": [pristina_var, other_var]},
@@ -371,17 +389,25 @@ def build_housing() -> dict:
         ],
     )
 
-    def latest_value(var_code: str) -> float:
-        for code in sorted(all_codes, key=int, reverse=True):
+    def series(var_code: str) -> list[dict]:
+        points = []
+        for code, label in periods:
             value = px_value_at(data, [code, var_code])
             if value is not None:
-                return value
-        raise RuntimeError(f"no housing index value found for variable {var_code!r}")
+                points.append({"period": label, "index": value})
+        return points
 
-    return {
-        "prishtina": {"index_2018_base": 100, "index_latest": latest_value(pristina_var)},
-        "rest": {"index_2018_base": 100, "index_latest": latest_value(other_var)},
-    }
+    def bucket(var_code: str) -> dict:
+        points = series(var_code)
+        if not points:
+            raise RuntimeError(f"no housing index history found for variable {var_code!r}")
+        return {
+            "index_2018_base": 100,
+            "index_latest": points[-1]["index"],
+            "history": points,
+        }
+
+    return {"prishtina": bucket(pristina_var), "rest": bucket(other_var)}
 
 
 def build_business_sectors() -> list[dict]:

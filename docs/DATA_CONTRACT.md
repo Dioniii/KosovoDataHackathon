@@ -29,8 +29,16 @@ file first and tell the team.
   ],
 
   "housing": {
-    "prishtina": { "index_2018_base": 100, "index_latest": number },
-    "rest":      { "index_2018_base": 100, "index_latest": number }
+    "prishtina": {
+      "index_2018_base": 100,
+      "index_latest": number,
+      "history": [ { "period": "YYYYQn", "index": number } ]  // quarterly, oldest first
+    },
+    "rest": {
+      "index_2018_base": 100,
+      "index_latest": number,
+      "history": [ { "period": "YYYYQn", "index": number } ]
+    }
   },
 
   "business_sectors": [
@@ -63,6 +71,12 @@ file first and tell the team.
 - **`housing_bucket`** is either `"prishtina"` (the Prishtinë region) or
   `"rest"` (every other region) — it's the key used to look up the matching
   entry in `housing`.
+- **`housing[bucket].history`** is the quarterly ASKdata series (annual-average
+  rows from the source table are dropped, only real "YYYYQn" quarters kept),
+  oldest first. `app/forecast.py` fits a linear trend to it to project the
+  index 4 quarters ahead and turns that into a plain-language urgency note
+  on the property tab. Older data files without this field still work —
+  forecasting is simply skipped (`None`) when there isn't enough history.
 - **`business_sectors[].by_municipality`** keys are municipality names as
   strings (not a fixed enum here) — the full list of 38 Kosovo municipalities
   is defined by the source data, not by this contract.
