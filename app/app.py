@@ -111,6 +111,26 @@ st.markdown(
     .urgency.medium { background: #FEF3C7; color: #92400E; }
     .urgency.low { background: #DCFCE7; color: #166534; }
     .urgency.watch { background: #F1F5F9; color: #475569; }
+
+    .outlook {
+        border-radius: 14px; padding: 1rem 1.15rem; margin: 0.7rem 0 0.2rem;
+        border: 1px solid transparent; border-left-width: 6px;
+        box-shadow: 0 6px 18px -12px rgba(0,0,0,0.25);
+    }
+    .outlook-headline {
+        font-size: 1.15rem; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 0.3rem;
+    }
+    .outlook-body { font-size: 0.94rem; line-height: 1.48; color: #1f2937; }
+    .outlook-high { background: #FEE2E2; border-color: #DC2626; }
+    .outlook-high .outlook-headline { color: #B91C1C; }
+    .outlook-medium { background: #FEF3C7; border-color: #D97706; }
+    .outlook-medium .outlook-headline { color: #B45309; }
+    .outlook-opportunity { background: #EDE9FE; border-color: #7C3AED; }
+    .outlook-opportunity .outlook-headline { color: #6D28D9; }
+    .outlook-watch { background: #F1F5F9; border-color: #64748B; }
+    .outlook-watch .outlook-headline { color: #475569; }
+    .outlook-none { background: #F1F5F9; border-color: #94A3B8; }
+    .outlook-none .outlook-headline { color: #475569; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -420,8 +440,13 @@ with tab_property:
             detail = next(r for r in ranking if r["name"] == selected_name)
 
             with map_col:
-                alert_kind, message = urgency_note(detail.get("forecast"), selected_name)
-                getattr(st, alert_kind)(message)
+                card_kind, headline, message = urgency_note(detail)
+                st.markdown(
+                    f'<div class="outlook outlook-{card_kind}">'
+                    f'<div class="outlook-headline">{headline}</div>'
+                    f'<div class="outlook-body">{message}</div></div>',
+                    unsafe_allow_html=True,
+                )
 
             with detail_col:
                 st.markdown(f'<h3 style="color:#F43F5E; margin-top:0;">{selected_name}</h3>', unsafe_allow_html=True)

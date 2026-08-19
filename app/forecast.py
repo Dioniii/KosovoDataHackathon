@@ -128,54 +128,78 @@ def housing_bucket_forecast(housing: dict, housing_bucket: str) -> Optional[Fore
     return forecast_next_year(entry.get("history", []))
 
 
-def urgency_note(forecast: Optional[Forecast], region_name: str) -> tuple[str, str]:
-    """(alert_kind, message): one plain-English sentence a non-technical reader
-    can understand at a glance, plus which Streamlit alert style to show it in
-    (alert_kind is "error" | "warning" | "success" | "info" — pass straight to
-    the matching st.<alert_kind>() call). No numbers jargon (no "R²", no
-    "index", no "segment") — just what it means for someone deciding whether
-    to act now or wait.
+def urgency_note(row: dict) -> tuple[str, str, str]:
+    """(card_kind, headline, message) for the property-tab outlook card.
+
+    The housing price forecast only comes in two flavors (Prishtinë vs. every
+    other region share one bucket each — see pipeline/fetch.py), which made
+    six of seven regions show the identical note. To make every region read
+    distinctly, this blends the (bucket-level) price forecast with that
+    region's own momentum_rank — its real, region-specific rank by
+    momentumScore among the regions shown (set by attach_urgency below) —
+    so two regions sharing a price forecast still get different copy grounded
+    in their own numbers, not fabricated.
+
+    card_kind is one of "high" | "medium" | "opportunity" | "watch" | "none",
+    each with its own CSS look in app.py. The message is a plain HTML fragment
+    (uses <b>, not markdown **) since app.py embeds it directly inside a raw
+    HTML card rather than passing it through st.markdown on its own.
     """
+    name = row["name"]
+    forecast = row.get("forecast")
+    rank, total = row["momentum_rank"], row["momentum_total"]
+    top_half = rank <= (total + 1) // 2
+
     if forecast is None:
-        return "info", f"Not enough price history yet to predict {region_name}'s market."
+        return "none", "ℹ️ No prediction yet", f"Not enough price history yet to predict {name}'s market."
 
     pct = forecast["predicted_yoy_pct"]
     tier = forecast["urgency"]
 
     if tier == "high":
-        return "error", (
-            f"🔥 If you wait a year, prices in {region_name} could be about "
-            f"**{pct:.0f}% higher** — this looks like a good time to act."
+        return "high", "🔥 Act soon", (
+            f"<b>{name}</b> prices could be about <b>{pct:.0f}% higher</b> a year from now, and it's "
+            f"already ranked <b>#{rank} of {total}</b> for investment momentum — waiting could mean "
+            "paying more later."
         )
     if tier == "medium":
-        return "warning", (
-            f"📈 Prices in {region_name} are trending up — expect roughly "
-            f"**{pct:.0f}% higher** a year from now if that continues."
+        return "medium", "📈 Good timing", (
+            f"<b>{name}</b> prices are trending up (~<b>{pct:.0f}%</b> expected over the next year) and "
+            f"it ranks <b>#{rank} of {total}</b> for momentum — a decent window before it gets more "
+            "competitive."
         )
-    if tier == "low":
-        return "success", (
-            f"🟢 Prices in {region_name} have been steady — no big change expected "
-            "over the next year, so there's no rush."
+    if top_half:
+        return "opportunity", "💎 Hidden opportunity", (
+            f"<b>{name}</b>'s prices haven't moved much yet, but it's ranked <b>#{rank} of {total}</b> "
+            "for investment momentum — that gap between activity and price won't stay open forever."
         )
-    if forecast["r_squared"] < MIN_TRUSTED_R2:
-        return "info", (
-            f"👀 Recent prices in {region_name} have been bouncing around too much "
-            "to predict clearly — worth keeping an eye on."
-        )
-    return "info", f"👀 Prices in {region_name} have recently cooled off — no rush to buy right now."
+    return "watch", "👀 No rush here", (
+        f"<b>{name}</b> is steady on price and ranks <b>#{rank} of {total}</b> for momentum — nothing "
+        "urgent, but worth checking back on."
+    )
 
 
 def attach_urgency(rows: list[dict], housing: dict) -> list[dict]:
-    """Return `rows` (each needs a "housing_bucket" key, as compute_property_
-    ranking's output does) with a "forecast" key merged in — None where there
-    isn't enough history to project."""
+    """Return `rows` (each needs "housing_bucket", "name" and "momentumScore"
+    keys, as compute_property_ranking's output does) with "forecast",
+    "momentum_rank" and "momentum_total" merged in. "forecast" is None where
+    there isn't enough quarterly history to project.
+    """
     cache: dict[str, Optional[Forecast]] = {}
+    momentum_order = sorted(rows, key=lambda r: -r["momentumScore"])
+    momentum_rank = {r["name"]: i + 1 for i, r in enumerate(momentum_order)}
+
     out = []
     for row in rows:
         bucket = row["housing_bucket"]
         if bucket not in cache:
             cache[bucket] = housing_bucket_forecast(housing, bucket)
-        out.append({**row, "forecast": cache[bucket]})
+        out.append({
+            **row,
+            "forecast": cache[bucket],
+            "momentum_rank": momentum_rank[row["name"]],
+            "momentum_total": len(rows),
+        })
     return out
 
 
