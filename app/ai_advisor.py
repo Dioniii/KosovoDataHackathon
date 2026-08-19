@@ -329,14 +329,86 @@ _CSS = """
 }
 
 @media (max-width: 480px) {
-    .st-key-__PFX__fab_wrap { right: 16px; bottom: 16px; }
+    .st-key-__PFX__fab_wrap {
+        right: max(12px, env(safe-area-inset-right));
+        bottom: max(12px, env(safe-area-inset-bottom));
+        width: 54px;
+    }
+    .st-key-__PFX__fab_wrap button {
+        width: 54px;
+        height: 54px;
+        min-height: 54px;
+    }
     .st-key-__PFX__panel_wrap {
-        right: 16px;
-        left: 16px;
+        right: max(8px, env(safe-area-inset-right));
+        left: max(8px, env(safe-area-inset-left));
         width: auto;
         max-width: none;
-        bottom: 88px;
-        max-height: min(70vh, calc(100vh - 170px));
+        bottom: calc(76px + env(safe-area-inset-bottom));
+        max-height: calc(100dvh - 92px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+        border-radius: 16px;
+        overflow-x: hidden;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+    .st-key-__PFX__header {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        padding: 0.7rem 0.75rem 0.6rem;
+    }
+    .adv-title { font-size: 0.95rem; }
+    .adv-sub {
+        max-width: 78vw;
+        font-size: 0.68rem;
+        line-height: 1.25;
+    }
+    .st-key-__PFX__messages {
+        height: clamp(170px, 38dvh, 280px) !important;
+        min-height: 170px;
+        padding: 0.15rem 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+    .st-key-__PFX__messages [data-testid="stChatMessage"] {
+        padding: 0.65rem 0.6rem;
+    }
+    .st-key-__PFX__messages [data-testid="stChatMessage"] p {
+        overflow-wrap: anywhere;
+        word-break: normal;
+    }
+    .st-key-__PFX__input_area {
+        position: sticky;
+        bottom: 0;
+        z-index: 3;
+        padding: 0.55rem 0.65rem calc(0.65rem + env(safe-area-inset-bottom));
+    }
+    .st-key-__PFX__input_area [data-testid="stHorizontalBlock"] {
+        flex-wrap: wrap;
+        gap: 0.45rem;
+    }
+    .st-key-__PFX__input_area :is([data-testid="stColumn"], [data-testid="column"]) {
+        flex: 1 1 100% !important;
+        width: 100% !important;
+        min-width: 100% !important;
+    }
+    .st-key-__PFX__input_area button {
+        min-height: 44px;
+        white-space: normal;
+        line-height: 1.2;
+    }
+}
+
+@media (max-width: 360px) {
+    .st-key-__PFX__panel_wrap {
+        right: max(4px, env(safe-area-inset-right));
+        left: max(4px, env(safe-area-inset-left));
+        border-radius: 13px;
+    }
+    .st-key-__PFX__messages {
+        height: clamp(150px, 34dvh, 230px) !important;
+        min-height: 150px;
     }
 }
 </style>
