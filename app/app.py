@@ -303,6 +303,7 @@ def view_toggle(key: str) -> str:
 # --------------------------------------------------------------------------- #
 data = load_data()
 regions = data["regions"]
+housing = data["housing"]
 business_sectors = data["business_sectors"]
 insights = data.get("insights", {})
 national = data.get("national", {})
@@ -409,18 +410,18 @@ with tab_property:
                 "trending up fast. Select a region below for the full note."
             )
 
-            table_df = pd.DataFrame(ranking)[
-                ["name", "personalizedScore", "momentumScore", "investment_yoy_pct", "tourism_gap_score", "distance_km"]
-            ].round(2)
-            table_df.columns = ["Region", "Personalized score", "Momentum score", "Investment YoY %", "Tourism gap (0-1)", "Distance (km)"]
+        table_df = pd.DataFrame(ranking)[
+            ["name", "personalizedScore", "momentumScore", "investment_yoy_pct", "tourism_gap_score", "distance_km"]
+        ].round(2)
+        table_df.columns = ["Region", "Personalized score", "Momentum score", "Investment YoY %", "Tourism gap (0-1)", "Distance (km)"]
 
-            if SUPPORTS_ROW_SELECT:
-                table_event = st.dataframe(
-                    table_df, hide_index=True, on_select="rerun", selection_mode="single-row", key="property_table"
-                )
-            else:
-                st.dataframe(table_df, hide_index=True)
-                table_event = None
+        if SUPPORTS_ROW_SELECT:
+            table_event = st.dataframe(
+                table_df, hide_index=True, on_select="rerun", selection_mode="single-row", key="property_table"
+            )
+        else:
+            st.dataframe(table_df, hide_index=True)
+            table_event = None
 
         with st.container(border=True):
             map_col, detail_col = st.columns([1, 1.3])
