@@ -11,8 +11,12 @@ import math
 
 EARTH_RADIUS_KM = 6371.0
 
-RAMP_LIGHT = "#86b6ef"
-RAMP_DARK = "#0d366b"
+# Sequential rank ramp: light tint of the Primary Accent (Neon Rose Pink) up to
+# full saturation. Single-hue on purpose (see app.py's build_rank_chart docstring) —
+# this is one measure ranked, not distinct categories, so it stays one hue,
+# just re-based on the theme's primaryColor instead of a generic blue.
+RAMP_LIGHT = "#FDD9DF"
+RAMP_DARK = "#F43F5E"
 
 
 def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:

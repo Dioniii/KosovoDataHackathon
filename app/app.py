@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import pandas as pd
 import plotly.graph_objects as go
+import plotly.io as pio
 import streamlit as st
 
 from data_loader import load_data
@@ -19,6 +20,40 @@ from scoring import (
 )
 
 st.set_page_config(page_title="Kosovo Investment Screener", layout="wide")
+
+# Custom Plotly template: discrete/qualitative colorway for any chart comparing
+# genuinely different series (as opposed to the ranked bar charts below, which
+# use scoring.rank_colors' single-hue sequential ramp on purpose — one measure
+# ranked, not distinct categories, keeps its own single hue rather than this
+# colorway).
+pio.templates["kosovo"] = go.layout.Template(
+    layout=go.Layout(
+        colorway=["#F43F5E", "#38BDF8", "#8B5CF6", "#10B981"],
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#0F172A"),
+    )
+)
+pio.templates.default = "kosovo"
+
+# Metric-card styling: Container Base fill, light-slate border, pink highlight
+# on the value. st.metric has no per-instance style params, so this targets its
+# stable data-testid hooks directly.
+st.markdown(
+    """
+    <style>
+    [data-testid="stMetric"] {
+        background-color: #0F172A;
+        border: 1px solid #E2E8F0;
+        border-radius: 0.5rem;
+        padding: 1rem 1rem 0.5rem;
+    }
+    [data-testid="stMetricLabel"] { color: #E2E8F0; }
+    [data-testid="stMetricValue"] { color: #F43F5E; }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 
 def _supports_row_select() -> bool:
@@ -36,7 +71,8 @@ SUPPORTS_ROW_SELECT = _supports_row_select()
 def build_rank_chart(names: list[str], values: list[float], axis_title: str, suffix: str = "") -> go.Figure:
     """Horizontal bar chart, one color ramp keyed to rank: lightest = lowest,
     darkest = highest. This is one measure ranked, not distinct categories,
-    so every bar uses shades of the same blue rather than one color each."""
+    so every bar uses shades of the same hue (the theme's primary accent)
+    rather than one color each."""
     pairs = sorted(zip(names, values), key=lambda p: p[1])  # ascending -> bottom to top
     colors = rank_colors(len(pairs))
     fig = go.Figure(
@@ -51,6 +87,7 @@ def build_rank_chart(names: list[str], values: list[float], axis_title: str, suf
         )
     )
     fig.update_layout(
+        template="kosovo",
         xaxis_title=axis_title,
         margin=dict(l=10, r=10, t=10, b=10),
         paper_bgcolor="rgba(0,0,0,0)",
@@ -68,11 +105,12 @@ def build_trend_chart(points: list[tuple[str, float]], y_title: str) -> go.Figur
             x=labels,
             y=values,
             mode="lines+markers",
-            line=dict(color="#2a78d6", width=3),
+            line=dict(color="#38BDF8", width=3),
             marker=dict(size=9),
         )
     )
     fig.update_layout(
+        template="kosovo",
         yaxis_title=y_title,
         margin=dict(l=10, r=10, t=10, b=10),
         paper_bgcolor="rgba(0,0,0,0)",
