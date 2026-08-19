@@ -26,6 +26,11 @@ from scoring import (
     rank_colors,
 )
 
+# Shared typography and text colors used by the Plotly chart styling below.
+INK = "#0b0b0b"
+INK_2 = "#52514e"
+FONT = 'system-ui, -apple-system, "Segoe UI", sans-serif'
+
 st.set_page_config(page_title="Kosovo Investment Screener", page_icon=":material/location_city:", layout="wide")
 
 # Custom Plotly template: discrete/qualitative colorway for any chart comparing
@@ -87,6 +92,24 @@ st.markdown(
     [data-testid="stMetricValue"] { color: #F43F5E !important; font-weight: 700; }
     [data-testid="stTab"][aria-selected="true"] p { color: #F43F5E !important; }
     [data-testid="stTab"] .react-aria-SelectionIndicator { background-color: #F43F5E !important; }
+    .podium { display: flex; gap: 0.7rem; margin: 0.4rem 0 1.1rem; flex-wrap: wrap; }
+    .pcard {
+        flex: 1 1 160px; min-width: 150px; border: 1px solid #E2E8F0;
+        border-radius: 0.9rem; padding: 0.9rem 1rem; background: #ffffff;
+    }
+    .pcard .rk { color: #F43F5E; font-weight: 800; }
+    .pcard .nm { color: #0b0b0b; font-size: 1.05rem; font-weight: 700; margin-top: 0.35rem; }
+    .pcard .sc { color: #52514e; font-size: 0.86rem; }
+    .pcard .meter { height: 7px; border-radius: 99px; background: #E2E8F0; overflow: hidden; margin-top: 0.5rem; }
+    .pcard .meter span { display: block; height: 100%; border-radius: 99px; background: #F43F5E; }
+    .urgency {
+        display: inline-block; margin-left: 0.4rem; padding: 0.12rem 0.55rem;
+        border-radius: 999px; background: #F1F5F9; color: #52514e;
+        font-size: 0.72rem; font-weight: 700; vertical-align: middle;
+    }
+    .urgency.high { background: #FEE2E2; color: #991B1B; }
+    .urgency.medium { background: #FEF3C7; color: #92400E; }
+    .urgency.low { background: #DCFCE7; color: #166534; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -104,8 +127,28 @@ def _supports_row_select() -> bool:
 
 SUPPORTS_ROW_SELECT = _supports_row_select()
 
+
+def podium(items: list[dict]) -> None:
+    """Render the three highest-ranked items as compact summary cards."""
+    cards = []
+    for rank, item in enumerate(items[:3], start=1):
+        pct = max(4.0, min(100.0, float(item["pct"])))
+        cards.append(
+            f'<div class="pcard p{rank}"><div class="rk">#{rank}</div>'
+            f'<div class="nm">{item["name"]}</div>'
+            f'<div class="sc">{item["value"]}</div>'
+            f'<div class="meter"><span style="width:{pct:.0f}%"></span></div></div>'
+        )
+    st.markdown(f'<div class="podium">{"".join(cards)}</div>', unsafe_allow_html=True)
+
+
+def urgency_badge_html(tier: str) -> str:
+    """Return the styled label used beside property forecast results."""
+    return f'<span class="urgency {tier}">{URGENCY_LABELS.get(tier, tier)}</span>'
+
+
 _BASE_LAYOUT = dict(
-    font=dict(family=FONT, color=INK_2, size=13),
+    font=dict(color=INK_2, size=13),
     paper_bgcolor="rgba(0,0,0,0)",
     plot_bgcolor="rgba(0,0,0,0)",
     margin=dict(l=8, r=16, t=8, b=8),
@@ -210,8 +253,6 @@ def view_toggle(key: str) -> str:
 # --------------------------------------------------------------------------- #
 # Page
 # --------------------------------------------------------------------------- #
-inject_css()
-
 data = load_data()
 regions = data["regions"]
 housing = data["housing"]
@@ -350,13 +391,7 @@ with tab_property:
         table_df.columns = ["Region", "Personalized score", "Momentum score",
                             "Investment YoY %", "Tourism gap (0-1)", "Distance (km)",
                             "Predicted price YoY % (1yr)", "Urgency"]
-        table_df = pd.DataFrame(ranking)[
-                ["name", "personalizedScore", "momentumScore", "investment_yoy_pct", "tourism_gap_score", "distance_km"]
-            ].round(2)
-        table_df.columns = ["Region", "Personalized score", "Momentum score", "Investment YoY %", "Tourism gap (0-1)", "Distance (km)"]
-
         st.caption("Select a region below to see its price outlook and research brief.")
-        selected_name = select_row(table_df, "Region", key="property_table")
         selected_name = select_row(table_df, "Region", key="property_table")
 
         detail = next(r for r in ranking if r["name"] == selected_name)
@@ -388,27 +423,6 @@ with tab_property:
                     )
         with c_brief:
             brief_card(insights.get(selected_name, ""), "No research brief yet for this region.")
-        with st.container(border=True):
-            st.markdown(f'<h3 style="color:#F43F5E; margin-top:0;">{selected_name}</h3>', unsafe_allow_html=True)
-            avg_score = sum(r["personalizedScore"] for r in ranking) / len(ranking)
-            mcol1, mcol2 = st.columns(2)
-            mcol1.metric(
-                "Personalized score",
-                f"{detail['personalizedScore']:.1f}",
-                delta=f"{detail['personalizedScore'] - avg_score:+.1f} vs. avg of shown regions",
-            )
-            mcol2.metric(
-                "Investment YoY",
-                f"{detail['investment_yoy_pct']:.1f}%",
-                delta=f"{detail['investment_yoy_pct']:.1f}%",
-            )
-
-            trend_points = housing_trend_points(region_obj["housing_bucket"], housing)
-            st.plotly_chart(build_trend_chart(trend_points, "Housing price index (2018 = 100)"), key="property_trend")
-
-            insight_text = insights.get(selected_name, "")
-            st.markdown("**Research brief**")
-            st.write(insight_text if insight_text else "_No research brief yet for this region._")
 
 with tab_business:
     st.subheader("Which municipality is worth researching for a business investment?")
