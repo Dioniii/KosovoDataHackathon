@@ -18,6 +18,7 @@ import streamlit as st
 
 import ai_advisor
 from data_loader import load_data
+from forecast import URGENCY_LABELS, attach_urgency, urgency_note
 from scoring import (
     business_trend_points,
     compute_property_ranking,
@@ -25,6 +26,11 @@ from scoring import (
     rank_business,
     rank_colors,
 )
+
+# Shared typography and text colors used by the Plotly chart styling below.
+INK = "#0b0b0b"
+INK_2 = "#52514e"
+FONT = 'system-ui, -apple-system, "Segoe UI", sans-serif'
 
 st.set_page_config(page_title="Kosovo Investment Screener", page_icon=":material/location_city:", layout="wide")
 
@@ -87,6 +93,24 @@ st.markdown(
     [data-testid="stMetricValue"] { color: #F43F5E !important; font-weight: 700; }
     [data-testid="stTab"][aria-selected="true"] p { color: #F43F5E !important; }
     [data-testid="stTab"] .react-aria-SelectionIndicator { background-color: #F43F5E !important; }
+    .podium { display: flex; gap: 0.7rem; margin: 0.4rem 0 1.1rem; flex-wrap: wrap; }
+    .pcard {
+        flex: 1 1 160px; min-width: 150px; border: 1px solid #E2E8F0;
+        border-radius: 0.9rem; padding: 0.9rem 1rem; background: #ffffff;
+    }
+    .pcard .rk { color: #F43F5E; font-weight: 800; }
+    .pcard .nm { color: #0b0b0b; font-size: 1.05rem; font-weight: 700; margin-top: 0.35rem; }
+    .pcard .sc { color: #52514e; font-size: 0.86rem; }
+    .pcard .meter { height: 7px; border-radius: 99px; background: #E2E8F0; overflow: hidden; margin-top: 0.5rem; }
+    .pcard .meter span { display: block; height: 100%; border-radius: 99px; background: #F43F5E; }
+    .urgency {
+        display: inline-block; margin-left: 0.4rem; padding: 0.12rem 0.55rem;
+        border-radius: 999px; background: #F1F5F9; color: #52514e;
+        font-size: 0.72rem; font-weight: 700; vertical-align: middle;
+    }
+    .urgency.high { background: #FEE2E2; color: #991B1B; }
+    .urgency.medium { background: #FEF3C7; color: #92400E; }
+    .urgency.low { background: #DCFCE7; color: #166534; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -104,8 +128,28 @@ def _supports_row_select() -> bool:
 
 SUPPORTS_ROW_SELECT = _supports_row_select()
 
+
+def podium(items: list[dict]) -> None:
+    """Render the three highest-ranked items as compact summary cards."""
+    cards = []
+    for rank, item in enumerate(items[:3], start=1):
+        pct = max(4.0, min(100.0, float(item["pct"])))
+        cards.append(
+            f'<div class="pcard p{rank}"><div class="rk">#{rank}</div>'
+            f'<div class="nm">{item["name"]}</div>'
+            f'<div class="sc">{item["value"]}</div>'
+            f'<div class="meter"><span style="width:{pct:.0f}%"></span></div></div>'
+        )
+    st.markdown(f'<div class="podium">{"".join(cards)}</div>', unsafe_allow_html=True)
+
+
+def urgency_badge_html(tier: str) -> str:
+    """Return the styled label used beside property forecast results."""
+    return f'<span class="urgency {tier}">{URGENCY_LABELS.get(tier, tier)}</span>'
+
+
 _BASE_LAYOUT = dict(
-    font=dict(family=FONT, color=INK_2, size=13),
+    font=dict(color=INK_2, size=13),
     paper_bgcolor="rgba(0,0,0,0)",
     plot_bgcolor="rgba(0,0,0,0)",
     margin=dict(l=8, r=16, t=8, b=8),
@@ -257,8 +301,6 @@ def view_toggle(key: str) -> str:
 # --------------------------------------------------------------------------- #
 # Page
 # --------------------------------------------------------------------------- #
-inject_css()
-
 data = load_data()
 regions = data["regions"]
 business_sectors = data["business_sectors"]
@@ -347,14 +389,24 @@ with tab_property:
             st.caption("Lower-tier segment selected — Prishtinë (highest price index) is excluded from ranking.")
 
     ranking = compute_property_ranking(regions, anchor_name, w_momentum, w_tourism, exclude_prishtina)
+    ranking = attach_urgency(ranking, housing)
 
     if not ranking:
         st.warning("No regions to rank with the current filters.")
     else:
-        with st.container(border=True):
-            st.plotly_chart(
-                build_rank_chart([r["name"] for r in ranking], [r["personalizedScore"] for r in ranking], "Personalized score"),
-                key="property_chart",
+        st.markdown("#### Top picks for your inputs")
+        podium([{
+            "name": r["name"],
+            "value": (
+                f"score {r['personalizedScore']:.1f}/100"
+                + (urgency_badge_html(r["forecast"]["urgency"]) if r["forecast"] else "")
+            ),
+            "pct": r["personalizedScore"],
+        } for r in ranking])
+        if any(r["forecast"] and r["forecast"]["urgency"] == "high" for r in ranking):
+            st.caption(
+                "🔥 **High urgency** = our 1-year price forecast for that segment is "
+                "trending up fast. Select a region below for the full note."
             )
 
             table_df = pd.DataFrame(ranking)[

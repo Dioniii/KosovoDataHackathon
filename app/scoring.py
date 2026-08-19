@@ -316,18 +316,8 @@ def rank_business(sector: dict) -> list[dict]:
 
 
 # ------------------------------------------------------------------ #
-# Housing / business trend helpers
+# Business trend helper
 # ------------------------------------------------------------------ #
-def housing_trend_points(housing_bucket: str, housing: dict) -> list[tuple[str, float]]:
-    """The only real multi-point history the data has for a region: the 2018
-    baseline index and the latest index for its housing bucket."""
-    entry = housing.get(housing_bucket, {})
-    return [
-        ("2018 (base)", entry.get("index_2018_base", 100)),
-        ("Latest", entry.get("index_latest")),
-    ]
-
-
 def business_trend_points(entry: dict) -> list[tuple[str, float]]:
     """Two-point enterprise-count trend, backing out the prior period from
     count_latest and growth_pct (there's no separate history in the data)."""
