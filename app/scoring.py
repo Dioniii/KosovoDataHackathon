@@ -3,6 +3,19 @@
 No Streamlit imports here on purpose — everything in this module is a plain
 function of plain data, so it can be unit tested and reasoned about without
 spinning up the app.
+
+Single source of truth for every formula. Both the Streamlit app (app.py) and
+the offline analysis code (pipeline/insights.py, app/anomaly.py) import from
+here — nothing re-implements a formula elsewhere.
+
+Two design decisions come from docs/ANALYSIS_FINDINGS.md:
+  * Tiny-base floor (Issue 1): municipalities with very few registered
+    businesses produce meaningless growth rates (1 -> 3 units reads as +200%).
+    Below MIN_COUNT a municipality is marked low_confidence and ranked beneath
+    every qualifying one, so a blip can never top a real hub.
+  * investment_yoy_pct is a proxy — the YoY change in construction's SHARE of
+    the investment mix, not investment growth. Scores only need its relative
+    ordering; human-readable text (insights.py) describes it correctly.
 """
 
 from __future__ import annotations
@@ -10,9 +23,11 @@ from __future__ import annotations
 import math
 
 EARTH_RADIUS_KM = 6371.0
-
 RAMP_LIGHT = "#86b6ef"
 RAMP_DARK = "#0d366b"
+
+# Below this many registered businesses, a municipality's growth_pct is noise.
+MIN_COUNT = 15
 
 
 def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -41,6 +56,8 @@ def proximity_weight(distance_km: float) -> float:
 def momentum_score(
     investment_norm: float, tourism_gap_score: float, w_momentum: float, w_tourism: float
 ) -> float:
+    """Per-region momentum, 0..100, from an already-normalized investment value
+    and the (already 0..1) tourism_gap_score. Weights are user-adjustable."""
     total_weight = w_momentum + w_tourism
     if total_weight == 0:
         return 0.0
@@ -119,14 +136,115 @@ def compute_property_ranking(
     return rows
 
 
-def rank_business(sector: dict) -> list[dict]:
-    """Rank a sector's municipalities by growth_pct for the "invest" tab."""
+# --------------------------------------------------------------------------- #
+# Business ranking — with the tiny-base floor + sector-I demand adjustment
+# --------------------------------------------------------------------------- #
+def _region_tourism_lookup(regions: list[dict] | None) -> dict[str, float]:
+    lookup: dict[str, float] = {}
+    for r in regions or []:
+        lookup[r["name"]] = r["tourism_gap_score"]
+        for a in r.get("aliases", []):
+            lookup[a] = r["tourism_gap_score"]
+    return lookup
+
+
+def score_municipalities(
+    sector: dict, regions: list[dict] | None = None, min_count: int = MIN_COUNT
+) -> dict[str, dict]:
+    """Core sector scorer. Returns
+        { municipality: {score 0..100, growth_pct, count_latest, low_confidence} }
+
+    Tiny-base floor: below `min_count` a municipality is low_confidence, is
+    normalized separately, and is scaled into 0..49 so it always ranks below any
+    qualifying municipality. If nothing qualifies, the whole set is scored and
+    all are flagged low_confidence (a caveated ranking beats none).
+
+    Sector "I" (Accommodation & food service) only: growth is damped by the
+    parent region's tourism_gap_score before scoring (needs `regions`):
+        adjusted = growth_pct * (0.6 + 0.4 * tourism_gap_score)
+    so hospitality growth without visitor demand is a weaker signal.
+    """
+    is_hospitality = sector.get("code") == "I"
+    tourism = _region_tourism_lookup(regions) if is_hospitality else {}
+
+    rows = []
+    for name, m in sector["by_municipality"].items():
+        g = m["growth_pct"]
+        if is_hospitality and regions:
+            g = g * (0.6 + 0.4 * tourism.get(name, 0.5))  # neutral 0.5 if unmatched
+        rows.append(
+            {
+                "name": name,
+                "adj": g,
+                "growth_pct": m["growth_pct"],
+                "count_latest": m["count_latest"],
+                "low_confidence": m["count_latest"] < min_count,
+            }
+        )
+
+    def info(r: dict, score: float) -> dict:
+        return {
+            "score": score,
+            "growth_pct": r["growth_pct"],
+            "count_latest": r["count_latest"],
+            "low_confidence": r["low_confidence"],
+        }
+
+    qualifying = [r for r in rows if not r["low_confidence"]]
+    out: dict[str, dict] = {}
+    if qualifying:
+        for r, s in zip(qualifying, normalize([r["adj"] for r in qualifying])):
+            out[r["name"]] = info(r, round(s * 100, 1))
+        low = [r for r in rows if r["low_confidence"]]
+        for r, s in zip(low, normalize([r["adj"] for r in low])):
+            out[r["name"]] = info(r, round(s * 49, 1))
+    else:
+        for r, s in zip(rows, normalize([r["adj"] for r in rows])):
+            out[r["name"]] = info(r, round(s * 100, 1))
+    return out
+
+
+def business_score(sector: dict, regions: list[dict] | None = None,
+                   min_count: int = MIN_COUNT) -> dict[str, dict]:
+    """Alias of score_municipalities — the name the analysis code imports."""
+    return score_municipalities(sector, regions, min_count)
+
+
+def rank_business(sector: dict, regions: list[dict] | None = None,
+                  min_count: int = MIN_COUNT) -> list[dict]:
+    """Rank a sector's municipalities for the "invest" tab.
+
+    Backward-compatible with the frontend's original one-arg call
+    `rank_business(sector)`: still returns rows carrying name/growth_pct/
+    count_latest (plus score/low_confidence). Now sorted by the floor-aware
+    score instead of raw growth_pct, so a 1->3-unit blip no longer ranks first.
+    Pass `regions` to also enable the sector-I demand adjustment.
+    """
+    scored = score_municipalities(sector, regions, min_count)
     rows = [
-        {"name": muni, "growth_pct": entry["growth_pct"], "count_latest": entry["count_latest"]}
-        for muni, entry in sector["by_municipality"].items()
+        {
+            "name": name,
+            "growth_pct": i["growth_pct"],
+            "count_latest": i["count_latest"],
+            "score": i["score"],
+            "low_confidence": i["low_confidence"],
+        }
+        for name, i in scored.items()
     ]
-    rows.sort(key=lambda r: r["growth_pct"], reverse=True)
+    rows.sort(key=lambda r: (r["score"], r["growth_pct"]), reverse=True)
     return rows
+
+
+def momentum_by_region(regions: list[dict], w_investment: float = 0.5,
+                       w_tourism: float = 0.5) -> dict[str, float]:
+    """Per-region momentum as {name: 0..100}, built from the same normalize +
+    momentum_score primitives the app uses. Used by insights.py and anomaly.py."""
+    inv_norm = normalize([r["investment_yoy_pct"] for r in regions])
+    return {
+        r["name"]: round(momentum_score(inv_norm[i], r["tourism_gap_score"],
+                                        w_investment, w_tourism), 1)
+        for i, r in enumerate(regions)
+    }
 
 
 def housing_trend_points(housing_bucket: str, housing: dict) -> list[tuple[str, float]]:
