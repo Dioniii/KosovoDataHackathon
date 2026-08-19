@@ -111,6 +111,7 @@ st.markdown(
     .urgency.high { background: #FEE2E2; color: #991B1B; }
     .urgency.medium { background: #FEF3C7; color: #92400E; }
     .urgency.low { background: #DCFCE7; color: #166534; }
+    .urgency.watch { background: #F1F5F9; color: #475569; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -405,10 +406,7 @@ with tab_property:
             "pct": r["personalizedScore"],
         } for r in ranking])
         if any(r["forecast"] and r["forecast"]["urgency"] == "high" for r in ranking):
-            st.caption(
-                "🔥 **High urgency** = our 1-year price forecast for that segment is "
-                "trending up fast. Select a region below for the full note."
-            )
+            st.caption("🔥 High urgency = prices there are expected to rise a lot in the next year.")
 
         table_df = pd.DataFrame(ranking)[
             ["name", "personalizedScore", "momentumScore", "investment_yoy_pct", "tourism_gap_score", "distance_km"]
@@ -461,6 +459,10 @@ with tab_property:
                 selected_name = st.selectbox("Pick a region to inspect", [r["name"] for r in ranking], key="property_select")
 
             detail = next(r for r in ranking if r["name"] == selected_name)
+
+            with map_col:
+                alert_kind, message = urgency_note(detail.get("forecast"), selected_name)
+                getattr(st, alert_kind)(message)
 
             with detail_col:
                 st.markdown(f'<h3 style="color:#F43F5E; margin-top:0;">{selected_name}</h3>', unsafe_allow_html=True)

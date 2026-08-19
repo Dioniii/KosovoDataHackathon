@@ -181,8 +181,6 @@ def _key(name: str) -> str:
     return f"{STATE_PREFIX}{name}"
 
 
-_AVATARS = {"assistant": ":material/auto_awesome:", "user": ":material/person:"}
-
 # CSS for the floating widget. "__PFX__" is replaced with STATE_PREFIX so the
 # selectors always match the st.container(key=...) classes below regardless
 # of what STATE_PREFIX is set to. Colors are the app's own palette (primary
@@ -468,7 +466,7 @@ def render(data: dict) -> None:
     active = st.session_state[_key("active")]
 
     with st.container(key=_key("fab_wrap")):
-        if st.button("✕" if active else "✨", key=_key("fab_btn"), help="AI advisor"):
+        if st.button("×" if active else "AI", key=_key("fab_btn"), help="AI advisor"):
             st.session_state[_key("active")] = not active
             if not active:  # was closed -> just opened: start a fresh intake
                 _reset()
@@ -487,13 +485,13 @@ def render(data: dict) -> None:
                     unsafe_allow_html=True,
                 )
             with hcol2:
-                if st.button("✕", key=_key("close_btn"), help="Close"):
+                if st.button("×", key=_key("close_btn"), help="Close"):
                     st.session_state[_key("active")] = False
                     st.rerun()
 
         with st.container(key=_key("messages"), height=340):
             for msg in st.session_state[_key("history")]:
-                st.chat_message(msg["role"], avatar=_AVATARS.get(msg["role"])).write(msg["content"])
+                st.chat_message(msg["role"]).write(msg["content"])
 
         with st.container(key=_key("input_area")):
             step = st.session_state[_key("step")]
@@ -501,11 +499,11 @@ def render(data: dict) -> None:
 
             if step == "purpose":
                 c1, c2 = st.columns(2)
-                if c1.button("🏠 Buy property", key=_key("purpose_property"), width="stretch"):
+                if c1.button("Buy property", key=_key("purpose_property"), width="stretch"):
                     _say("user", "Buy property")
                     _goto("budget")
                     st.rerun()
-                if c2.button("🏢 Invest in a business", key=_key("purpose_business"), width="stretch"):
+                if c2.button("Invest in a business", key=_key("purpose_business"), width="stretch"):
                     _say("user", "Invest in a business")
                     _goto("sector")
                     st.rerun()
@@ -522,7 +520,7 @@ def render(data: dict) -> None:
                 region_names = [r["name"] for r in data["regions"]]
                 with st.form(key=_key("anchor_form")):
                     anchor = st.selectbox("Anchor region", region_names)
-                    if st.form_submit_button("Continue", type="primary", icon=":material/arrow_forward:"):
+                    if st.form_submit_button("Continue", type="primary"):
                         answers["anchor"] = anchor
                         _say("user", anchor)
                         _goto("priority")
@@ -540,7 +538,7 @@ def render(data: dict) -> None:
                 with st.form(key=_key("property_notes_form")):
                     notes = st.text_input("Anything else? (optional)", placeholder="Type here…")
                     c1, c2 = st.columns(2)
-                    submit = c1.form_submit_button("Send", type="primary", icon=":material/send:", width="stretch")
+                    submit = c1.form_submit_button("Send", type="primary", width="stretch")
                     skip = c2.form_submit_button("Skip", width="stretch")
                     if submit or skip:
                         text = notes if submit else ""
@@ -571,7 +569,7 @@ def render(data: dict) -> None:
                 with st.form(key=_key("business_notes_form")):
                     notes = st.text_input("Anything else? (optional)", placeholder="Type here…")
                     c1, c2 = st.columns(2)
-                    submit = c1.form_submit_button("Send", type="primary", icon=":material/send:", width="stretch")
+                    submit = c1.form_submit_button("Send", type="primary", width="stretch")
                     skip = c2.form_submit_button("Skip", width="stretch")
                     if submit or skip:
                         text = notes if submit else ""
@@ -601,6 +599,6 @@ def render(data: dict) -> None:
                     _say("assistant", result)
                     st.rerun()
                 else:
-                    if st.button("🔄 Start over", key=_key("restart_btn"), type="primary", width="stretch"):
+                    if st.button("Start over", key=_key("restart_btn"), type="primary", width="stretch"):
                         _reset()
                         st.rerun()

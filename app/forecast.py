@@ -41,8 +41,6 @@ URGENCY_LABELS = {
     "watch": "Watch",
 }
 
-BUCKET_NAMES = {"prishtina": "Prishtinë", "rest": "rest-of-Kosovo"}
-
 
 class Forecast(TypedDict):
     predicted_index: float
@@ -130,44 +128,41 @@ def housing_bucket_forecast(housing: dict, housing_bucket: str) -> Optional[Fore
     return forecast_next_year(entry.get("history", []))
 
 
-def urgency_note(forecast: Optional[Forecast], housing_bucket: str) -> str:
-    """One urgency-framed sentence for the property tab: what waiting a year
-    would likely cost (or not) in this housing segment, instead of a chart.
+def urgency_note(forecast: Optional[Forecast], region_name: str) -> tuple[str, str]:
+    """(alert_kind, message): one plain-English sentence a non-technical reader
+    can understand at a glance, plus which Streamlit alert style to show it in
+    (alert_kind is "error" | "warning" | "success" | "info" — pass straight to
+    the matching st.<alert_kind>() call). No numbers jargon (no "R²", no
+    "index", no "segment") — just what it means for someone deciding whether
+    to act now or wait.
     """
-    segment = BUCKET_NAMES.get(housing_bucket, housing_bucket)
     if forecast is None:
-        return f"Not enough quarterly price history yet to project the {segment} segment a year out."
+        return "info", f"Not enough price history yet to predict {region_name}'s market."
 
     pct = forecast["predicted_yoy_pct"]
     tier = forecast["urgency"]
 
     if tier == "high":
-        return (
-            f"⏳ If you don't act now, prices in the {segment} segment are projected to "
-            f"rise about **{pct:.1f}%** over the next year (index {forecast['predicted_index']:.1f} "
-            "vs. today) if the current trend holds — waiting could mean paying more later."
+        return "error", (
+            f"🔥 If you wait a year, prices in {region_name} could be about "
+            f"**{pct:.0f}% higher** — this looks like a good time to act."
         )
     if tier == "medium":
-        return (
-            f"📈 Prices in the {segment} segment are trending up — projected "
-            f"**+{pct:.1f}%** over the next year if the trend holds, so there's some "
-            "benefit to not waiting too long."
+        return "warning", (
+            f"📈 Prices in {region_name} are trending up — expect roughly "
+            f"**{pct:.0f}% higher** a year from now if that continues."
         )
     if tier == "low":
-        return (
-            f"🟢 Prices in the {segment} segment are moving steadily "
-            f"({pct:+.1f}% projected over the next year) — no particular urgency either way."
+        return "success", (
+            f"🟢 Prices in {region_name} have been steady — no big change expected "
+            "over the next year, so there's no rush."
         )
     if forecast["r_squared"] < MIN_TRUSTED_R2:
-        return (
-            f"⚪ The recent price trend for the {segment} segment is too inconsistent to "
-            f"call confidently (fit R²={forecast['r_squared']:.2f}) — treat any short-term "
-            "forecast here with caution rather than urgency."
+        return "info", (
+            f"👀 Recent prices in {region_name} have been bouncing around too much "
+            "to predict clearly — worth keeping an eye on."
         )
-    return (
-        f"⚪ Prices in the {segment} segment have recently cooled or turned down "
-        f"({pct:+.1f}% projected over the next year) — no rush to act, worth watching instead."
-    )
+    return "info", f"👀 Prices in {region_name} have recently cooled off — no rush to buy right now."
 
 
 def attach_urgency(rows: list[dict], housing: dict) -> list[dict]:
