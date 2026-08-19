@@ -327,10 +327,10 @@ with tab_property:
             pview = view_toggle("property_view")
 
         if pview == "Chart":
-        with st.container(border=True):
-            st.plotly_chart(
-                build_rank_chart([r["name"] for r in ranking], [r["personalizedScore"] for r in ranking], "Personalized score"),
-                key="property_chart",
+            with st.container(border=True):
+                st.plotly_chart(
+                    build_rank_chart([r["name"] for r in ranking], [r["personalizedScore"] for r in ranking], "Personalized score"),
+                    key="property_chart",
             )
 
         table_rows = [
@@ -350,14 +350,14 @@ with tab_property:
         table_df.columns = ["Region", "Personalized score", "Momentum score",
                             "Investment YoY %", "Tourism gap (0-1)", "Distance (km)",
                             "Predicted price YoY % (1yr)", "Urgency"]
-            table_df = pd.DataFrame(ranking)[
+        table_df = pd.DataFrame(ranking)[
                 ["name", "personalizedScore", "momentumScore", "investment_yoy_pct", "tourism_gap_score", "distance_km"]
             ].round(2)
-            table_df.columns = ["Region", "Personalized score", "Momentum score", "Investment YoY %", "Tourism gap (0-1)", "Distance (km)"]
+        table_df.columns = ["Region", "Personalized score", "Momentum score", "Investment YoY %", "Tourism gap (0-1)", "Distance (km)"]
 
         st.caption("Select a region below to see its price outlook and research brief.")
         selected_name = select_row(table_df, "Region", key="property_table")
-            selected_name = select_row(table_df, "Region", key="property_table")
+        selected_name = select_row(table_df, "Region", key="property_table")
 
         detail = next(r for r in ranking if r["name"] == selected_name)
         region_obj = next(r for r in regions if r["name"] == selected_name)
