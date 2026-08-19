@@ -28,10 +28,10 @@ st.set_page_config(page_title="Kosovo Investment Screener", layout="wide")
 # colorway).
 pio.templates["kosovo"] = go.layout.Template(
     layout=go.Layout(
-        colorway=["#F43F5E", "#38BDF8", "#8B5CF6", "#10B981"],
+        colorway=["#755E62", "#38BDF8", "#8B5CF6", "#10B981"],
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#0F172A"),
+        font=dict(color="#282C37"),
     )
 )
 pio.templates.default = "kosovo"
