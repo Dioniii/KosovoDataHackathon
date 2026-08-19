@@ -50,6 +50,8 @@ st.markdown(
     }
     [data-testid="stMetricLabel"] { color: #E2E8F0; }
     [data-testid="stMetricValue"] { color: #F43F5E; }
+    [data-baseweb="tab-highlight"] { background-color: #F43F5E !important; }
+    [data-baseweb="tab"][aria-selected="true"] p { color: #F43F5E !important; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -145,122 +147,131 @@ st.info(
     "starting point for research, not a recommendation."
 )
 if national:
-    st.caption(
-        f"National context: GDP growth {national.get('gdp_growth_pct', '—')}%, "
-        f"FDI {national.get('fdi_pct_gdp', '—')}% of GDP "
-        f"(as of {national.get('last_updated', '—')})."
-    )
+    with st.container(border=True):
+        ncol1, ncol2, ncol3 = st.columns(3)
+        ncol1.metric("GDP growth", f"{national.get('gdp_growth_pct', '—')}%")
+        ncol2.metric("FDI (% of GDP)", f"{national.get('fdi_pct_gdp', '—')}%")
+        ncol3.metric("Data as of", f"{national.get('last_updated', '—')}")
 
 tab_property, tab_business = st.tabs(["Buy property", "Invest in a business"])
 
 with tab_property:
     st.subheader("Which region is worth researching for a property purchase?")
 
-    col1, col2 = st.columns(2)
-    with col1:
-        budget_tier = st.select_slider(
-            "Market segment (price index tier)",
-            options=["Under a threshold", "Around it", "Above it"],
-            value="Around it",
-            help=(
-                "We only have a relative price index, not absolute euro prices — "
-                "this picks which market segment is realistic for you."
-            ),
-        )
-    with col2:
-        region_names = [r["name"] for r in regions]
-        default_anchor = "Prishtinë" if "Prishtinë" in region_names else region_names[0]
-        anchor_name = st.selectbox(
-            "Your anchor point (e.g. where you have family)",
-            region_names,
-            index=region_names.index(default_anchor),
-        )
+    with st.container(border=True):
+        col1, col2 = st.columns(2)
+        with col1:
+            budget_tier = st.select_slider(
+                "Market segment (price index tier)",
+                options=["Under a threshold", "Around it", "Above it"],
+                value="Around it",
+                help=(
+                    "We only have a relative price index, not absolute euro prices — "
+                    "this picks which market segment is realistic for you."
+                ),
+            )
+        with col2:
+            region_names = [r["name"] for r in regions]
+            default_anchor = "Prishtinë" if "Prishtinë" in region_names else region_names[0]
+            anchor_name = st.selectbox(
+                "Your anchor point (e.g. where you have family)",
+                region_names,
+                index=region_names.index(default_anchor),
+            )
 
-    wcol1, wcol2 = st.columns(2)
-    with wcol1:
-        w_momentum = st.slider("Weight: investment momentum", 0.0, 1.0, 0.5, 0.05)
-    with wcol2:
-        w_tourism = st.slider("Weight: tourism demand", 0.0, 1.0, 0.5, 0.05)
+        wcol1, wcol2 = st.columns(2)
+        with wcol1:
+            w_momentum = st.slider("Weight: investment momentum", 0.0, 1.0, 0.5, 0.05)
+        with wcol2:
+            w_tourism = st.slider("Weight: tourism demand", 0.0, 1.0, 0.5, 0.05)
 
-    exclude_prishtina = budget_tier == "Under a threshold"
-    if exclude_prishtina:
-        st.caption("Lower-tier segment selected — Prishtinë (highest price index) is excluded from ranking.")
+        exclude_prishtina = budget_tier == "Under a threshold"
+        if exclude_prishtina:
+            st.caption("Lower-tier segment selected — Prishtinë (highest price index) is excluded from ranking.")
 
     ranking = compute_property_ranking(regions, anchor_name, w_momentum, w_tourism, exclude_prishtina)
 
     if not ranking:
         st.warning("No regions to rank with the current filters.")
     else:
-        st.plotly_chart(
-            build_rank_chart([r["name"] for r in ranking], [r["personalizedScore"] for r in ranking], "Personalized score"),
-            key="property_chart",
-        )
+        with st.container(border=True):
+            st.plotly_chart(
+                build_rank_chart([r["name"] for r in ranking], [r["personalizedScore"] for r in ranking], "Personalized score"),
+                key="property_chart",
+            )
 
-        table_df = pd.DataFrame(ranking)[
-            ["name", "personalizedScore", "momentumScore", "investment_yoy_pct", "tourism_gap_score", "distance_km"]
-        ].round(2)
-        table_df.columns = ["Region", "Personalized score", "Momentum score", "Investment YoY %", "Tourism gap (0-1)", "Distance (km)"]
+            table_df = pd.DataFrame(ranking)[
+                ["name", "personalizedScore", "momentumScore", "investment_yoy_pct", "tourism_gap_score", "distance_km"]
+            ].round(2)
+            table_df.columns = ["Region", "Personalized score", "Momentum score", "Investment YoY %", "Tourism gap (0-1)", "Distance (km)"]
 
-        selected_name = select_row(table_df, "Region", key="property_table")
+            selected_name = select_row(table_df, "Region", key="property_table")
+
         detail = next(r for r in ranking if r["name"] == selected_name)
         region_obj = next(r for r in regions if r["name"] == selected_name)
 
-        st.markdown(f"### {selected_name}")
-        avg_score = sum(r["personalizedScore"] for r in ranking) / len(ranking)
-        mcol1, mcol2 = st.columns(2)
-        mcol1.metric(
-            "Personalized score",
-            f"{detail['personalizedScore']:.1f}",
-            delta=f"{detail['personalizedScore'] - avg_score:+.1f} vs. avg of shown regions",
-        )
-        mcol2.metric(
-            "Investment YoY",
-            f"{detail['investment_yoy_pct']:.1f}%",
-            delta=f"{detail['investment_yoy_pct']:.1f}%",
-        )
-
-        trend_points = housing_trend_points(region_obj["housing_bucket"], housing)
-        st.plotly_chart(build_trend_chart(trend_points, "Housing price index (2018 = 100)"), key="property_trend")
-
-        insight_text = insights.get(selected_name, "")
         with st.container(border=True):
+            st.markdown(f'<h3 style="color:#F43F5E; margin-top:0;">{selected_name}</h3>', unsafe_allow_html=True)
+            avg_score = sum(r["personalizedScore"] for r in ranking) / len(ranking)
+            mcol1, mcol2 = st.columns(2)
+            mcol1.metric(
+                "Personalized score",
+                f"{detail['personalizedScore']:.1f}",
+                delta=f"{detail['personalizedScore'] - avg_score:+.1f} vs. avg of shown regions",
+            )
+            mcol2.metric(
+                "Investment YoY",
+                f"{detail['investment_yoy_pct']:.1f}%",
+                delta=f"{detail['investment_yoy_pct']:.1f}%",
+            )
+
+            trend_points = housing_trend_points(region_obj["housing_bucket"], housing)
+            st.plotly_chart(build_trend_chart(trend_points, "Housing price index (2018 = 100)"), key="property_trend")
+
+            insight_text = insights.get(selected_name, "")
             st.markdown("**Research brief**")
             st.write(insight_text if insight_text else "_No research brief yet for this region._")
 
 with tab_business:
     st.subheader("Which municipality is worth researching for a business investment?")
 
-    sector_labels = [f"{s['code']} — {s['name']}" for s in business_sectors]
-    default_index = next((i for i, s in enumerate(business_sectors) if s["code"] == "I"), 0)
-    sector_choice = st.selectbox("Business sector", sector_labels, index=default_index)
-    sector = business_sectors[sector_labels.index(sector_choice)]
+    with st.container(border=True):
+        sector_labels = [f"{s['code']} — {s['name']}" for s in business_sectors]
+        default_index = next((i for i, s in enumerate(business_sectors) if s["code"] == "I"), 0)
+        sector_choice = st.selectbox("Business sector", sector_labels, index=default_index)
+        sector = business_sectors[sector_labels.index(sector_choice)]
 
     biz_ranking = rank_business(sector)
 
     if not biz_ranking:
         st.warning("No municipality data for this sector.")
     else:
-        st.plotly_chart(
-            build_rank_chart([r["name"] for r in biz_ranking], [r["growth_pct"] for r in biz_ranking], "Growth %", suffix="%"),
-            key="business_chart",
-        )
+        with st.container(border=True):
+            st.plotly_chart(
+                build_rank_chart([r["name"] for r in biz_ranking], [r["growth_pct"] for r in biz_ranking], "Growth %", suffix="%"),
+                key="business_chart",
+            )
 
-        table_df = pd.DataFrame(biz_ranking)[["name", "growth_pct", "count_latest"]].round(2)
-        table_df.columns = ["Municipality", "Growth %", "Enterprises (latest)"]
+            table_df = pd.DataFrame(biz_ranking)[["name", "growth_pct", "count_latest"]].round(2)
+            table_df.columns = ["Municipality", "Growth %", "Enterprises (latest)"]
 
-        selected_muni = select_row(table_df, "Municipality", key="business_table")
+            selected_muni = select_row(table_df, "Municipality", key="business_table")
+
         entry = sector["by_municipality"][selected_muni]
 
-        st.markdown(f"### {selected_muni} — {sector['name']}")
-        mcol1, mcol2 = st.columns(2)
-        mcol1.metric("Growth %", f"{entry['growth_pct']:.1f}%", delta=f"{entry['growth_pct']:.1f}%")
-        mcol2.metric("Enterprises (latest)", f"{entry['count_latest']:.0f}")
-
-        trend_points = business_trend_points(entry)
-        st.plotly_chart(build_trend_chart(trend_points, "Enterprise count"), key="business_trend")
-
-        insight_key = f"sector:{sector['code']}:{selected_muni}"
-        insight_text = insights.get(insight_key, "")
         with st.container(border=True):
+            st.markdown(
+                f'<h3 style="color:#F43F5E; margin-top:0;">{selected_muni} — {sector["name"]}</h3>',
+                unsafe_allow_html=True,
+            )
+            mcol1, mcol2 = st.columns(2)
+            mcol1.metric("Growth %", f"{entry['growth_pct']:.1f}%", delta=f"{entry['growth_pct']:.1f}%")
+            mcol2.metric("Enterprises (latest)", f"{entry['count_latest']:.0f}")
+
+            trend_points = business_trend_points(entry)
+            st.plotly_chart(build_trend_chart(trend_points, "Enterprise count"), key="business_trend")
+
+            insight_key = f"sector:{sector['code']}:{selected_muni}"
+            insight_text = insights.get(insight_key, "")
             st.markdown("**Research brief**")
             st.write(insight_text if insight_text else "_No research brief yet for this municipality/sector._")
