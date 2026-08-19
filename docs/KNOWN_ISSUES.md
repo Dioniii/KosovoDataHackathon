@@ -35,6 +35,80 @@ Neither is a true multi-year series — it's two points connected by a line.
 Flagging this rather than implementing it — check whether it's worth the pipeline/contract
 change before the deadline, or whether the two-point trend is good enough for the demo.
 
+## QA pass (Design, QA & Pitch)
+
+Ran `app/app.py` against `pipeline/sample_data.json` and `pipeline/data.json` both
+programmatically (via `streamlit.testing.v1.AppTest`, scripting every widget interaction)
+and manually (`streamlit run app/app.py`, clicked through both tabs). Design-system items
+(theme in `.streamlit/config.toml`, rank-color ramp, `st.metric` usage, transparent Plotly
+backgrounds, disclaimer banner rendering unconditionally on load) all already match the
+spec — no changes needed there.
+
+### Passed
+
+- Default load, both tabs: no exceptions.
+- Budget tier "Under a threshold" excludes Prishtinë (`housing_bucket == "prishtina"`)
+  entirely from the property ranking (list drops from 7 rows to 6), not just re-ordered.
+- Momentum/tourism weight sliders swept including both-zero and both-max: no crash
+  (`momentum_score` returns `0.0` cleanly when both weights are 0).
+- Business-tab sector selectbox cycles through all 3 sectors with correctly different
+  municipality rankings each time.
+- `streamlit run app/app.py` works whether launched from the repo root or from inside
+  `app/` — `data_loader.py`'s `Path(__file__)`-relative resolution makes it cwd-independent,
+  confirmed by actually starting the server from both locations.
+- A fresh restart of the process shows no dependence on leftover session state.
+
+### Found: stale row-selection follows table *position*, not the selected region/municipality
+
+**Where:** `select_row()` in `app/app.py` (used by both tabs' ranked tables).
+
+**Repro (verified via `AppTest`, both tabs):**
+1. Property tab: select a row other than the top one (e.g. row 3, "Gjakovë" while every
+   weight/anchor is default).
+2. Change *any* control that re-sorts the list without changing its row count — e.g. the
+   anchor-point selectbox, or either weight slider.
+3. The detail panel silently now shows a *different* region (in one repro run: "Pejë")
+   with no new click from the user.
+
+Same pattern on the business tab: select a row (e.g. row 2 → "Viti" under sector I), switch
+the sector dropdown to a different sector (still ~38 rows), and the detail panel silently
+shows whatever municipality now occupies row 2 in the new sector's ranking (in one repro
+run: "F.Kosovë" under sector L) — a municipality the user never clicked on.
+
+**Why it happens:** Streamlit's `on_select="rerun"` dataframe selection is stored by
+*integer row position*, not by the row's identity. `select_row()` reads `rows[0]` from the
+selection event and indexes back into the (freshly re-sorted or newly-filtered) dataframe
+with `df.iloc[row]`. When a control changes the row *count* (e.g. property tab's budget-tier
+exclusion, 7→6 rows), Streamlit correctly detects the selection index is now out of range
+and resets it to the top row — that path is fine, verified working. But when a control only
+changes row *order or content* while keeping the same row count (anchor switch, slider
+tweak, sector switch), Streamlit has no way to know the old position no longer means the
+same thing, so the stale index silently re-attaches to whatever is now in that slot. The
+highlighted row and the detail panel do stay in sync with *each other* — this isn't a
+crash or a desync between the table and the panel — but the tool silently swaps which
+region/municipality the user is looking at without them clicking anything, which is a real
+trust problem for a tool whose whole pitch is "every ranking is honestly grounded in real
+numbers."
+
+**Suggested fix (not applied — logic change in `app.py`, flagging per the "don't fix
+someone else's code out from under them" rule rather than patching it):** track the
+selected *name* in `st.session_state` (e.g. `st.session_state[f"{key}_selected_name"]`)
+instead of relying solely on row position; on rerun, if that name still exists in the new
+ranking, keep showing it regardless of its new row position; if it doesn't, only then fall
+back to the top row. This needs the app developer's call on whether it's worth doing before
+the deadline — the current behavior never crashes, it's a silent-mislabel risk, not a
+blocker.
+
+### Not independently verified (needs a live human pass, not just scripted checks)
+
+- Visual contrast of the lightest rank-ramp color (`#86b6ef`) against the page background
+  (`#fcfcfb`) at actual screen brightness.
+- Whether the 38-row business-tab chart/table looks cramped on a real screen.
+- Browser window resize / narrow-viewport behavior (wide layout).
+- Albanian diacritics (ë, ç) rendering correctly in the browser — the underlying JSON is
+  correct UTF-8 (`ensure_ascii=False` in `fetch.py`), and this is expected to be fine, but a
+  human should actually look at the rendered page once before the demo rather than take
+  that on faith.
 ---
 
 ## Worth implementing (not a bug): scheduled data refresh via GitHub Actions
