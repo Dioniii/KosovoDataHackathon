@@ -316,19 +316,6 @@ def rank_business(sector: dict) -> list[dict]:
 
 
 # ------------------------------------------------------------------ #
-# Business trend helper
-# ------------------------------------------------------------------ #
-def business_trend_points(entry: dict) -> list[tuple[str, float]]:
-    """Two-point enterprise-count trend, backing out the prior period from
-    count_latest and growth_pct (there's no separate history in the data)."""
-    latest = entry.get("count_latest", 0)
-    growth = entry.get("growth_pct", 0.0)
-    denom = 1 + growth / 100
-    prev = round(latest / denom, 1) if denom > 0 else 0.0
-    return [("Previous period", prev), ("Latest", latest)]
-
-
-# ------------------------------------------------------------------ #
 # Self-test
 # ------------------------------------------------------------------ #
 def load_data(path: Optional[str] = None) -> dict:

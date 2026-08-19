@@ -1,26 +1,20 @@
 # Known Issues
 
-## No real multi-year trend data (business tab only)
+## No real multi-year trend data for business registrations
 
-**Where:** `app/scoring.py` (`business_trend_points`), used by the business tab's line
-chart in `app/app.py`.
+**Where:** `docs/DATA_CONTRACT.md` — `business_sectors[].by_municipality[...]` is a single
+latest value (`count_latest`, `growth_pct`), no time series.
 
-**Problem:** `docs/DATA_CONTRACT.md` doesn't define a time-series field for business
-registrations — `business_sectors[].by_municipality[...]` is a single latest value
-(`count_latest`, `growth_pct`).
+**Status:** the business tab's two-point trend chart (which only had `count_latest` and a
+prior-period count backed out algebraically from `growth_pct`) was removed by product
+decision rather than fixed — it wasn't a real multi-year series and was more misleading
+than useful (e.g. a 2→5 enterprise change reading as "+150%"). The property tab hit the
+same problem for housing prices; there it was actually fixed, since `IPBN02.px` has real
+quarterly history to pull (see `pipeline/fetch.py`'s `housing[bucket].history` and
+`app/forecast.py`).
 
-**Current workaround:** The business-tab chart shows only two points: `count_latest` and
-a prior-period count backed out algebraically from `growth_pct`
-(`prev = count_latest / (1 + growth_pct/100)`). Not a true multi-year series.
-
-**Resolved for housing:** the property tab no longer has this problem — `pipeline/fetch.py`
-now pulls the full quarterly series from `IPBN02.px` into `housing[bucket].history`, and
-`app/forecast.py` fits a trend to it. The property tab shows that as a plain-language
-urgency note ("prices projected to rise/fall X% over the next year") rather than a chart,
-by product decision, not a data limitation.
-
-**To fix the business tab the same way:** `pipeline/fetch.py` would need to pull more than
-the latest-two-periods from `enterprises03.px` (2019Q1–2023Q4 per the README, so the raw
+**To do the same for business:** `pipeline/fetch.py` would need to pull more than the
+latest-two-periods from `enterprises03.px` (2019Q1–2023Q4 per the README, so the raw
 history is available upstream), and `docs/DATA_CONTRACT.md` would need a `history` array
 per `business_sectors[].by_municipality[...]` entry, mirroring what housing already has.
 

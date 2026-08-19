@@ -20,7 +20,6 @@ import ai_advisor
 from data_loader import load_data
 from forecast import URGENCY_LABELS, attach_urgency, urgency_note
 from scoring import (
-    business_trend_points,
     compute_property_ranking,
     normalize,
     rank_business,
@@ -197,29 +196,6 @@ def build_rank_chart(names: list[str], values: list[float], axis_title: str, suf
         height=max(320, 34 * len(pairs)),
     )
     _round_bars(fig)
-    return fig
-
-
-def build_trend_chart(points: list[tuple[str, float]], y_title: str) -> go.Figure:
-    labels = [p[0] for p in points]
-    values = [p[1] for p in points]
-    fig = go.Figure(
-        go.Scatter(
-            x=labels,
-            y=values,
-            mode="lines+markers",
-            line=dict(color="#38BDF8", width=3),
-            marker=dict(size=9),
-        )
-    )
-    fig.update_layout(
-        template="kosovo",
-        yaxis_title=y_title,
-        margin=dict(l=10, r=10, t=10, b=10),
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        height=280,
-    )
     return fig
 
 
@@ -518,9 +494,6 @@ with tab_business:
             mcol1, mcol2 = st.columns(2)
             mcol1.metric("Growth %", f"{entry['growth_pct']:.1f}%", delta=f"{entry['growth_pct']:.1f}%")
             mcol2.metric("Enterprises (latest)", f"{entry['count_latest']:.0f}")
-
-            trend_points = business_trend_points(entry)
-            st.plotly_chart(build_trend_chart(trend_points, "Enterprise count"), key="business_trend")
 
             insight_key = f"sector:{sector['code']}:{selected_muni}"
             insight_text = insights.get(insight_key, "")
