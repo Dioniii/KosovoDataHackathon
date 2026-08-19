@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import pandas as pd
 import plotly.graph_objects as go
+import plotly.io as pio
 import streamlit as st
 
 import ai_advisor
@@ -25,155 +26,71 @@ from scoring import (
     rank_colors,
 )
 
-# --------------------------------------------------------------------------- #
-# Palette (from the validated design-system reference)
-# --------------------------------------------------------------------------- #
-INK = "#0b0b0b"
-INK_2 = "#52514e"
-MUTED = "#898781"
-GRID = "#e1e0d9"
-BASELINE = "#c3c2b7"
-SURFACE = "#fcfcfb"
-PLANE = "#f9f9f7"
-ACCENT = "#2a78d6"
-GOOD = "#006300"
-WARNING = "#b06a00"
-FONT = 'system-ui, -apple-system, "Segoe UI", sans-serif'
+st.set_page_config(page_title="Kosovo Investment Screener", page_icon=":material/location_city:", layout="wide")
 
-st.set_page_config(
-    page_title="Kosovo Investment Screener",
-    page_icon="📍",
-    layout="wide",
-    initial_sidebar_state="collapsed",
-)
-
-
-# --------------------------------------------------------------------------- #
-# Global styling — one small CSS system, injected once
-# --------------------------------------------------------------------------- #
-def inject_css() -> None:
-    st.markdown(
-        f"""
-        <style>
-        :root {{
-            --ink:{INK}; --ink2:{INK_2}; --muted:{MUTED};
-            --surface:{SURFACE}; --plane:{PLANE}; --accent:{ACCENT};
-            --border: rgba(11,11,11,0.10);
-        }}
-        html, body, [class*="css"] {{ font-family:{FONT}; }}
-
-        .block-container {{ max-width: 1180px; padding-top: 2rem; padding-bottom: 4rem; }}
-
-        /* Hero as a card (the extra design block) */
-        .hero {{
-            position:relative; overflow:hidden;
-            background: linear-gradient(135deg,#123a66 0%,#1c5cab 55%,#2a78d6 100%);
-            border-radius:18px; padding:1.6rem 1.7rem; color:#fff;
-            box-shadow:0 10px 30px -14px rgba(18,58,102,.55);
-        }}
-        .hero::after {{  /* decorative square, rotated */
-            content:""; position:absolute; right:-46px; top:-46px; width:150px; height:150px;
-            background:rgba(255,255,255,.08); border-radius:26px; transform:rotate(18deg);
-        }}
-        .hero h1 {{ font-size: clamp(1.5rem,2.6vw,2.2rem); font-weight:750;
-            letter-spacing:-0.02em; margin:0 0 .4rem 0; line-height:1.14; color:#fff; }}
-        .hero .sub {{ color:rgba(255,255,255,.9); font-size:1rem; max-width:62ch; }}
-
-        /* Disclaimer — calm, no loud icon */
-        .disclaimer {{
-            background:#fbf6ea; border:1px solid rgba(176,106,0,.25);
-            border-left:4px solid {WARNING}; border-radius:10px;
-            padding:.65rem .9rem; margin:.9rem 0 .3rem 0; color:#5b4a1f; font-size:.9rem;
-        }}
-        .disclaimer b {{ color:#4a3c17; }}
-        .disclaimer .tag {{ font-size:.68rem; font-weight:800; letter-spacing:.06em;
-            color:{WARNING}; text-transform:uppercase; margin-right:.5rem; }}
-
-        /* KPI stat tiles — hover lift */
-        div[data-testid="stMetric"] {{
-            background: var(--surface); border:1px solid var(--border);
-            border-radius:14px; padding:.85rem 1rem;
-            transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
-        }}
-        div[data-testid="stMetric"]:hover {{
-            transform: translateY(-3px); border-color: rgba(42,120,214,.35);
-            box-shadow: 0 12px 24px -16px rgba(11,11,11,.4);
-        }}
-        div[data-testid="stMetricLabel"] p {{ color: var(--muted); font-weight:600;
-            font-size:.78rem; text-transform:uppercase; letter-spacing:.04em; }}
-        div[data-testid="stMetricValue"] {{ color: var(--ink); font-weight:750; }}
-
-        /* Tabs */
-        div[data-baseweb="tab-list"] {{ gap:.4rem; border-bottom:1px solid var(--border); }}
-        button[data-baseweb="tab"] {{
-            font-size:1rem; font-weight:650; padding:.55rem 1.1rem; border-radius:10px 10px 0 0;
-            transition: background .15s ease;
-        }}
-        button[data-baseweb="tab"]:hover {{ background: rgba(42,120,214,.07); }}
-        button[data-baseweb="tab"][aria-selected="true"] {{ color: var(--accent); }}
-
-        h2, h3 {{ letter-spacing:-0.01em; }}
-        div[data-testid="stVerticalBlockBorderWrapper"] {{
-            border-radius:14px; transition: box-shadow .15s ease; }}
-        div[data-testid="stVerticalBlockBorderWrapper"]:hover {{
-            box-shadow:0 10px 26px -18px rgba(11,11,11,.35); }}
-        div[data-testid="stDataFrame"] {{ border-radius:12px; overflow:hidden; }}
-
-        /* Podium of square cards (top 3) — interactive hover */
-        .podium {{ display:flex; gap:.7rem; margin:.4rem 0 1.1rem 0; flex-wrap:wrap; }}
-        .pcard {{
-            flex:1 1 160px; min-width:150px; aspect-ratio: 1 / .78;
-            border-radius:16px; padding:.9rem 1rem; border:1px solid var(--border);
-            background: var(--surface); display:flex; flex-direction:column; justify-content:space-between;
-            cursor:default; transition: transform .16s ease, box-shadow .16s ease;
-        }}
-        .pcard:hover {{ transform: translateY(-4px) scale(1.015);
-            box-shadow:0 16px 30px -18px rgba(11,11,11,.45); }}
-        .pcard.p1 {{ background: linear-gradient(160deg,#eaf2fd,#dcebfb); border-color:rgba(42,120,214,.35); }}
-        .pcard .rk {{ width:30px; height:30px; border-radius:9px; display:flex; align-items:center;
-            justify-content:center; font-weight:800; font-size:.95rem; color:#fff; background:var(--accent); }}
-        .pcard.p1 .rk {{ background:#123a66; }}
-        .pcard .nm {{ font-size:1.08rem; font-weight:750; color:var(--ink); margin-top:.35rem; }}
-        .pcard .sc {{ font-size:.86rem; color:var(--ink2); }}
-        .pcard .meter {{ height:7px; border-radius:99px; background:#e7ebf2; overflow:hidden; margin-top:.5rem; }}
-        .pcard .meter > span {{ display:block; height:100%; border-radius:99px;
-            background:linear-gradient(90deg,#5598e7,#184f95); }}
-
-        .badge {{ display:inline-block; font-size:.72rem; font-weight:700; padding:.12rem .5rem;
-            border-radius:999px; background:#fbf1dd; color:{WARNING}; border:1px solid rgba(176,106,0,.3);
-            margin-left:.4rem; vertical-align:middle; }}
-
-        .urgency {{ display:inline-block; font-size:.72rem; font-weight:700; padding:.12rem .55rem;
-            border-radius:999px; margin-left:.4rem; vertical-align:middle; border:1px solid transparent; }}
-        .urgency.high {{ background:#fdeae7; color:#a3341f; border-color:rgba(163,52,31,.3); }}
-        .urgency.medium {{ background:#fbf1dd; color:{WARNING}; border-color:rgba(176,106,0,.3); }}
-        .urgency.low {{ background:#e9f5ea; color:{GOOD}; border-color:rgba(0,99,0,.25); }}
-        .urgency.watch {{ background:#eceae4; color:{INK_2}; border-color:rgba(11,11,11,.15); }}
-
-        @media (max-width: 640px) {{
-            .block-container {{ padding-top:1.2rem; }}
-            .hero {{ padding:1.2rem 1.2rem; }}
-            .hero .sub {{ font-size:.94rem; }}
-            .pcard {{ flex:1 1 100%; aspect-ratio:auto; }}
-        }}
-        </style>
-        """,
-        unsafe_allow_html=True,
+# Custom Plotly template: discrete/qualitative colorway for any chart comparing
+# genuinely different series (as opposed to the ranked bar charts below, which
+# use scoring.rank_colors' single-hue sequential ramp on purpose — one measure
+# ranked, not distinct categories, keeps its own single hue rather than this
+# colorway).
+pio.templates["kosovo"] = go.layout.Template(
+    layout=go.Layout(
+        colorway=["#755E62", "#38BDF8", "#8B5CF6", "#10B981"],
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#282C37"),
     )
+)
+pio.templates.default = "kosovo"
 
-
-def podium(items: list[dict]) -> None:
-    """Render up to 3 square hover-cards. Each item: {name, value, pct}."""
-    cards = []
-    for i, it in enumerate(items[:3], start=1):
-        pct = max(4, min(100, it["pct"]))
-        cards.append(
-            f'<div class="pcard p{i}"><div class="rk">{i}</div>'
-            f'<div><div class="nm">{it["name"]}</div>'
-            f'<div class="sc">{it["value"]}</div>'
-            f'<div class="meter"><span style="width:{pct:.0f}%"></span></div></div></div>'
-        )
-    st.markdown(f'<div class="podium">{"".join(cards)}</div>', unsafe_allow_html=True)
+# App-wide polish: gradient hero banner, light metric cards (white fill, pink
+# accent value — same #F43F5E brand accent as before, just moved off a dark
+# card onto a light one), and the tab underline/label in that same accent.
+# st.metric has no per-instance style params, so this targets its stable
+# data-testid hooks directly.
+st.markdown(
+    """
+    <style>
+    .ks-hero {
+        background: linear-gradient(120deg, #1E3A8A 0%, #2a78d6 55%, #38BDF8 130%);
+        border-radius: 1rem;
+        padding: 1.75rem 2rem;
+        margin-bottom: 1.1rem;
+        box-shadow: 0 10px 30px rgba(37, 99, 235, 0.18);
+    }
+    .ks-hero-title {
+        color: #ffffff;
+        font-size: 1.9rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        margin-bottom: 0.35rem;
+    }
+    .ks-hero-sub {
+        color: rgba(255, 255, 255, 0.88);
+        font-size: 1rem;
+        max-width: 46rem;
+        line-height: 1.45;
+    }
+    [data-testid="stMetric"] {
+        background-color: #ffffff;
+        border: 1px solid #E2E8F0;
+        border-radius: 0.9rem;
+        padding: 1rem 1.1rem 0.75rem;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+        transition: box-shadow 0.2s ease, transform 0.2s ease;
+    }
+    [data-testid="stMetric"]:hover {
+        box-shadow: 0 10px 26px rgba(15, 23, 42, 0.09);
+        transform: translateY(-2px);
+    }
+    [data-testid="stMetricLabel"] { color: #64748B !important; font-weight: 500; }
+    [data-testid="stMetricValue"] { color: #F43F5E !important; font-weight: 700; }
+    [data-testid="stTab"][aria-selected="true"] p { color: #F43F5E !important; }
+    [data-testid="stTab"] .react-aria-SelectionIndicator { background-color: #F43F5E !important; }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 
 def _supports_row_select() -> bool:
@@ -208,8 +125,10 @@ def _round_bars(fig: go.Figure) -> None:
 
 
 def build_rank_chart(names: list[str], values: list[float], axis_title: str, suffix: str = "") -> go.Figure:
-    """Horizontal bars, one blue ramp keyed to rank (lightest = lowest). One
-    measure ranked, so shades of a single hue — never one color per bar."""
+    """Horizontal bar chart, one color ramp keyed to rank: lightest = lowest,
+    darkest = highest. This is one measure ranked, not distinct categories,
+    so every bar uses shades of the same hue (the theme's primary accent)
+    rather than one color each."""
     pairs = sorted(zip(names, values), key=lambda p: p[1])  # ascending -> bottom to top
     colors = rank_colors(len(pairs))
     ys = [n for n, _ in pairs]
@@ -225,15 +144,37 @@ def build_rank_chart(names: list[str], values: list[float], axis_title: str, suf
         )
     )
     fig.update_layout(
-        **_BASE_LAYOUT,
-        xaxis=dict(title=axis_title, gridcolor=GRID, zeroline=False,
-                   tickcolor=BASELINE, tickfont=dict(color=MUTED), showline=False),
-        yaxis=dict(gridcolor="rgba(0,0,0,0)", tickfont=dict(color=INK, size=13),
-                   linecolor=BASELINE),
-        height=max(300, 40 * len(pairs)),
-        bargap=0.28,
+        template="kosovo",
+        xaxis_title=axis_title,
+        margin=dict(l=10, r=10, t=10, b=10),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        height=max(320, 34 * len(pairs)),
     )
     _round_bars(fig)
+    return fig
+
+
+def build_trend_chart(points: list[tuple[str, float]], y_title: str) -> go.Figure:
+    labels = [p[0] for p in points]
+    values = [p[1] for p in points]
+    fig = go.Figure(
+        go.Scatter(
+            x=labels,
+            y=values,
+            mode="lines+markers",
+            line=dict(color="#38BDF8", width=3),
+            marker=dict(size=9),
+        )
+    )
+    fig.update_layout(
+        template="kosovo",
+        yaxis_title=y_title,
+        margin=dict(l=10, r=10, t=10, b=10),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        height=280,
+    )
     return fig
 
 
@@ -249,32 +190,6 @@ def select_row(df: pd.DataFrame, name_col: str, key: str) -> str:
         return df.iloc[row][name_col]
     st.dataframe(df, hide_index=True, use_container_width=True)
     return st.selectbox("Pick a row to inspect", df[name_col].tolist(), key=f"{key}_select")
-
-
-def urgency_badge_html(tier: str) -> str:
-    return f'<span class="urgency {tier}">{URGENCY_LABELS.get(tier, tier)}</span>'
-
-
-def build_trend_chart(points: list[tuple[str, float]], y_title: str) -> go.Figure:
-    labels = [p[0] for p in points]
-    values = [p[1] for p in points]
-    fig = go.Figure(
-        go.Scatter(
-            x=labels, y=values, mode="lines+markers",
-            line=dict(color=ACCENT, width=2.5, shape="spline"),
-            marker=dict(size=10, color=ACCENT, line=dict(color=SURFACE, width=2)),
-            fill="tozeroy", fillcolor="rgba(42,120,214,0.08)",
-            hovertemplate="%{x}<br>" + y_title + ": %{y:.1f}<extra></extra>",
-        )
-    )
-    fig.update_layout(
-        **_BASE_LAYOUT,
-        xaxis=dict(gridcolor="rgba(0,0,0,0)", tickfont=dict(color=INK)),
-        yaxis=dict(title=y_title, gridcolor=GRID, zeroline=False,
-                   tickfont=dict(color=MUTED), rangemode="tozero"),
-        height=270, hovermode="x unified",
-    )
-    return fig
 
 
 def brief_card(text: str, empty_msg: str) -> None:
@@ -306,14 +221,25 @@ national = data.get("national", {})
 
 st.markdown(
     """
-    <div class="hero">
-      <h1>Kosovo Property &amp; Investment Screener</h1>
-      <div class="sub">Find which region of Kosovo is worth a closer look — for buying
-      property, or investing in a business — using official open statistics.</div>
+    <div class="ks-hero">
+      <div class="ks-hero-title">Kosovo Property &amp; Investment Screener</div>
+      <div class="ks-hero-sub">Find which region of Kosovo is worth a closer look —
+      for buying property, or investing in a business — using official open statistics.</div>
     </div>
     """,
     unsafe_allow_html=True,
 )
+st.info(
+    "**Not investment advice.** This ranks regions using public statistics as a "
+    "starting point for research, not a recommendation.",
+    icon=":material/info:",
+)
+if national:
+    with st.container(border=True):
+        ncol1, ncol2, ncol3 = st.columns(3)
+        ncol1.metric("GDP growth", f"{national.get('gdp_growth_pct', '—')}%")
+        ncol2.metric("FDI (% of GDP)", f"{national.get('fdi_pct_gdp', '—')}%")
+        ncol3.metric("Data as of", f"{national.get('last_updated', '—')}")
 
 ai_advisor.render(data)
 
@@ -343,33 +269,36 @@ tab_property, tab_business = st.tabs(["Buy property", "Invest in a business"])
 with tab_property:
     st.subheader("Which region is worth researching for a property purchase?")
 
-    col1, col2 = st.columns(2)
-    with col1:
-        budget_tier = st.select_slider(
-            "Market segment (price-index tier)",
-            options=["Under a threshold", "Around it", "Above it"],
-            value="Around it",
-            help="We only have a relative price index, not euro prices — this picks "
-                 "which market segment is realistic for you.",
-        )
-    with col2:
-        region_names = [r["name"] for r in regions]
-        default_anchor = "Prishtinë" if "Prishtinë" in region_names else region_names[0]
-        anchor_name = st.selectbox(
-            "Your anchor point (e.g. where you have family)",
-            region_names, index=region_names.index(default_anchor),
-        )
+    with st.container(border=True):
+        col1, col2 = st.columns(2)
+        with col1:
+            budget_tier = st.select_slider(
+                "Market segment (price index tier)",
+                options=["Under a threshold", "Around it", "Above it"],
+                value="Around it",
+                help=(
+                    "We only have a relative price index, not absolute euro prices — "
+                    "this picks which market segment is realistic for you."
+                ),
+            )
+        with col2:
+            region_names = [r["name"] for r in regions]
+            default_anchor = "Prishtinë" if "Prishtinë" in region_names else region_names[0]
+            anchor_name = st.selectbox(
+                "Your anchor point (e.g. where you have family)",
+                region_names,
+                index=region_names.index(default_anchor),
+            )
 
-    with st.expander("Adjust what matters to you", expanded=True):
         wcol1, wcol2 = st.columns(2)
         with wcol1:
             w_momentum = st.slider("Weight: investment momentum", 0.0, 1.0, 0.5, 0.05)
         with wcol2:
             w_tourism = st.slider("Weight: tourism demand", 0.0, 1.0, 0.5, 0.05)
 
-    exclude_prishtina = budget_tier == "Under a threshold"
-    if exclude_prishtina:
-        st.caption("Lower-tier segment selected — Prishtinë (highest price index) is excluded.")
+        exclude_prishtina = budget_tier == "Under a threshold"
+        if exclude_prishtina:
+            st.caption("Lower-tier segment selected — Prishtinë (highest price index) is excluded from ranking.")
 
     ranking = compute_property_ranking(regions, anchor_name, w_momentum, w_tourism, exclude_prishtina)
     ranking = attach_urgency(ranking, housing)
@@ -398,10 +327,10 @@ with tab_property:
             pview = view_toggle("property_view")
 
         if pview == "Chart":
+        with st.container(border=True):
             st.plotly_chart(
-                build_rank_chart([r["name"] for r in ranking],
-                                 [r["personalizedScore"] for r in ranking], "Personalized score"),
-                use_container_width=True, key="property_chart",
+                build_rank_chart([r["name"] for r in ranking], [r["personalizedScore"] for r in ranking], "Personalized score"),
+                key="property_chart",
             )
 
         table_rows = [
@@ -421,9 +350,15 @@ with tab_property:
         table_df.columns = ["Region", "Personalized score", "Momentum score",
                             "Investment YoY %", "Tourism gap (0-1)", "Distance (km)",
                             "Predicted price YoY % (1yr)", "Urgency"]
+            table_df = pd.DataFrame(ranking)[
+                ["name", "personalizedScore", "momentumScore", "investment_yoy_pct", "tourism_gap_score", "distance_km"]
+            ].round(2)
+            table_df.columns = ["Region", "Personalized score", "Momentum score", "Investment YoY %", "Tourism gap (0-1)", "Distance (km)"]
 
         st.caption("Select a region below to see its price outlook and research brief.")
         selected_name = select_row(table_df, "Region", key="property_table")
+            selected_name = select_row(table_df, "Region", key="property_table")
+
         detail = next(r for r in ranking if r["name"] == selected_name)
         region_obj = next(r for r in regions if r["name"] == selected_name)
         forecast = detail["forecast"]
@@ -453,80 +388,68 @@ with tab_property:
                     )
         with c_brief:
             brief_card(insights.get(selected_name, ""), "No research brief yet for this region.")
+        with st.container(border=True):
+            st.markdown(f'<h3 style="color:#F43F5E; margin-top:0;">{selected_name}</h3>', unsafe_allow_html=True)
+            avg_score = sum(r["personalizedScore"] for r in ranking) / len(ranking)
+            mcol1, mcol2 = st.columns(2)
+            mcol1.metric(
+                "Personalized score",
+                f"{detail['personalizedScore']:.1f}",
+                delta=f"{detail['personalizedScore'] - avg_score:+.1f} vs. avg of shown regions",
+            )
+            mcol2.metric(
+                "Investment YoY",
+                f"{detail['investment_yoy_pct']:.1f}%",
+                delta=f"{detail['investment_yoy_pct']:.1f}%",
+            )
 
-# --------------------------------------------------------------------------- #
-# BUSINESS
-# --------------------------------------------------------------------------- #
+            trend_points = housing_trend_points(region_obj["housing_bucket"], housing)
+            st.plotly_chart(build_trend_chart(trend_points, "Housing price index (2018 = 100)"), key="property_trend")
+
+            insight_text = insights.get(selected_name, "")
+            st.markdown("**Research brief**")
+            st.write(insight_text if insight_text else "_No research brief yet for this region._")
+
 with tab_business:
     st.subheader("Which municipality is worth researching for a business investment?")
 
-    sector_labels = [f"{s['code']} — {s['name']}" for s in business_sectors]
-    default_index = next((i for i, s in enumerate(business_sectors) if s["code"] == "I"), 0)
-    sector_choice = st.selectbox("Business sector", sector_labels, index=default_index)
-    sector = business_sectors[sector_labels.index(sector_choice)]
+    with st.container(border=True):
+        sector_labels = [f"{s['code']} — {s['name']}" for s in business_sectors]
+        default_index = next((i for i, s in enumerate(business_sectors) if s["code"] == "I"), 0)
+        sector_choice = st.selectbox("Business sector", sector_labels, index=default_index)
+        sector = business_sectors[sector_labels.index(sector_choice)]
 
     biz_ranking = rank_business(sector)
 
     if not biz_ranking:
         st.warning("No municipality data for this sector.")
     else:
-        low_conf_any = any(r.get("low_confidence") for r in biz_ranking)
-        if low_conf_any:
-            hide_small = st.toggle("Hide small-base municipalities", value=False,
-                                   help="Very few registered businesses make growth % swing on "
-                                        "just a handful of registrations.")
-            if hide_small:
-                filtered = [r for r in biz_ranking if not r.get("low_confidence")]
-                biz_ranking = filtered or biz_ranking
-
-        # podium of top 3 municipalities (meter scaled across shown growth values)
-        gvals = [r["growth_pct"] for r in biz_ranking]
-        gmin, gmax = min(gvals), max(gvals)
-        span = (gmax - gmin) or 1
-        st.markdown("#### Top picks in this sector")
-        podium([{"name": r["name"], "value": f"{r['growth_pct']:+.1f}% growth",
-                 "pct": (r["growth_pct"] - gmin) / span * 100} for r in biz_ranking])
-
-        left, right = st.columns([3, 1])
-        left.markdown("**Full ranking**")
-        with right:
-            bview = view_toggle("business_view")
-        if bview == "Chart":
+        with st.container(border=True):
             st.plotly_chart(
-                build_rank_chart([r["name"] for r in biz_ranking],
-                                 [r["growth_pct"] for r in biz_ranking], "Growth %", suffix="%"),
-                use_container_width=True, key="business_chart",
+                build_rank_chart([r["name"] for r in biz_ranking], [r["growth_pct"] for r in biz_ranking], "Growth %", suffix="%"),
+                key="business_chart",
             )
 
-        cols = ["name", "growth_pct", "count_latest"]
-        rename = {"name": "Municipality", "growth_pct": "Growth %", "count_latest": "Enterprises (latest)"}
-        if any("low_confidence" in r for r in biz_ranking):
-            for r in biz_ranking:
-                r["Small base?"] = "yes" if r.get("low_confidence") else "—"
-            cols.append("Small base?")
-            rename["Small base?"] = "Small base?"
-        table_df = pd.DataFrame(biz_ranking)[cols].round(2).rename(columns=rename)
+            table_df = pd.DataFrame(biz_ranking)[["name", "growth_pct", "count_latest"]].round(2)
+            table_df.columns = ["Municipality", "Growth %", "Enterprises (latest)"]
 
-        st.caption("Select a municipality below to see its trend and research brief.")
-        selected_muni = select_row(table_df, "Municipality", key="business_table")
+            selected_muni = select_row(table_df, "Municipality", key="business_table")
+
         entry = sector["by_municipality"][selected_muni]
 
-        badge = ""
-        row = next((r for r in biz_ranking if r["name"] == selected_muni), {})
-        if row.get("low_confidence"):
-            badge = ' <span class="badge">small base — read with care</span>'
-        st.markdown(f"### {selected_muni} — {sector['name']}{badge}", unsafe_allow_html=True)
-
-        mcol1, mcol2 = st.columns(2)
-        mcol1.metric("Growth %", f"{entry['growth_pct']:.1f}%", delta=f"{entry['growth_pct']:.1f}%")
-        mcol2.metric("Enterprises (latest)", f"{entry['count_latest']:.0f}")
-
-        c_chart, c_brief = st.columns([1, 1])
-        with c_chart:
-            st.plotly_chart(
-                build_trend_chart(business_trend_points(entry), "Enterprise count"),
-                use_container_width=True, key="business_trend",
+        with st.container(border=True):
+            st.markdown(
+                f'<h3 style="color:#F43F5E; margin-top:0;">{selected_muni} — {sector["name"]}</h3>',
+                unsafe_allow_html=True,
             )
-        with c_brief:
-            brief_card(insights.get(f"sector:{sector['code']}:{selected_muni}", ""),
-                       "No research brief yet for this municipality/sector.")
+            mcol1, mcol2 = st.columns(2)
+            mcol1.metric("Growth %", f"{entry['growth_pct']:.1f}%", delta=f"{entry['growth_pct']:.1f}%")
+            mcol2.metric("Enterprises (latest)", f"{entry['count_latest']:.0f}")
+
+            trend_points = business_trend_points(entry)
+            st.plotly_chart(build_trend_chart(trend_points, "Enterprise count"), key="business_trend")
+
+            insight_key = f"sector:{sector['code']}:{selected_muni}"
+            insight_text = insights.get(insight_key, "")
+            st.markdown("**Research brief**")
+            st.write(insight_text if insight_text else "_No research brief yet for this municipality/sector._")
