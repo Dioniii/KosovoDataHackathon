@@ -181,6 +181,172 @@ def _key(name: str) -> str:
     return f"{STATE_PREFIX}{name}"
 
 
+_AVATARS = {"assistant": ":material/auto_awesome:", "user": ":material/person:"}
+
+# CSS for the floating widget. "__PFX__" is replaced with STATE_PREFIX so the
+# selectors always match the st.container(key=...) classes below regardless
+# of what STATE_PREFIX is set to. Colors are the app's own palette (primary
+# blue from .streamlit/config.toml, the #F43F5E accent and violet/sky tones
+# already used for charts in app.py) so the widget reads as part of the app,
+# not a bolted-on component.
+_CSS = """
+<style>
+.st-key-__PFX__fab_wrap {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 999995;
+    width: 60px;
+}
+.st-key-__PFX__fab_wrap button {
+    width: 60px;
+    height: 60px;
+    border-radius: 50% !important;
+    border: none !important;
+    background: linear-gradient(135deg, #38BDF8, #2a78d6 55%, #8B5CF6) !important;
+    color: #ffffff !important;
+    font-size: 1.4rem !important;
+    box-shadow: 0 10px 26px rgba(42, 120, 214, 0.4);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    animation: adv-pulse 2.6s ease-in-out infinite;
+}
+.st-key-__PFX__fab_wrap button:hover {
+    transform: scale(1.08) rotate(3deg);
+    box-shadow: 0 12px 30px rgba(42, 120, 214, 0.5);
+}
+.st-key-__PFX__fab_wrap button:active { transform: scale(0.94); }
+.st-key-__PFX__fab_wrap button p { font-size: 1.4rem !important; }
+
+@keyframes adv-pulse {
+    0%, 100% { box-shadow: 0 10px 26px rgba(42, 120, 214, 0.4), 0 0 0 0 rgba(139, 92, 246, 0.35); }
+    50% { box-shadow: 0 10px 30px rgba(42, 120, 214, 0.5), 0 0 0 9px rgba(139, 92, 246, 0); }
+}
+
+.st-key-__PFX__panel_wrap {
+    position: fixed;
+    right: 24px;
+    bottom: 96px;
+    z-index: 999994;
+    width: 380px;
+    max-width: calc(100vw - 32px);
+    max-height: min(600px, calc(100vh - 140px));
+    background: #ffffff;
+    border: 1px solid #E2E8F0;
+    border-radius: 18px;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.22), 0 2px 10px rgba(15, 23, 42, 0.08);
+    overflow: hidden;
+    animation: adv-panel-in 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes adv-panel-in {
+    from { opacity: 0; transform: translateY(18px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.st-key-__PFX__header {
+    background: linear-gradient(120deg, #2a78d6, #8B5CF6);
+    padding: 0.85rem 1rem 0.7rem;
+}
+.st-key-__PFX__header button {
+    background: rgba(255, 255, 255, 0.18) !important;
+    border: none !important;
+    color: #ffffff !important;
+    border-radius: 50% !important;
+    width: 30px;
+    height: 30px;
+}
+.st-key-__PFX__header button:hover { background: rgba(255, 255, 255, 0.3) !important; }
+.adv-title {
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.adv-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #4ADE80;
+    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.6);
+    animation: adv-dot-ping 2s ease-in-out infinite;
+    display: inline-block;
+}
+@keyframes adv-dot-ping {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.6); }
+    50% { box-shadow: 0 0 0 4px rgba(74, 222, 128, 0); }
+}
+.adv-sub {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.75rem;
+    margin-top: 0.1rem;
+}
+
+.st-key-__PFX__messages { background: #ffffff; padding: 0.25rem 0.15rem; }
+.st-key-__PFX__messages [data-testid="stChatMessage"]:last-child {
+    animation: adv-msg-in 0.25s ease;
+}
+@keyframes adv-msg-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.st-key-__PFX__input_area {
+    background: #FAFAF9;
+    border-top: 1px solid #E2E8F0;
+    padding: 0.7rem 0.85rem 0.85rem;
+}
+.st-key-__PFX__input_area button {
+    border-radius: 999px !important;
+    font-size: 0.85rem !important;
+}
+.st-key-__PFX__input_area [data-testid="stForm"] {
+    border: none;
+    padding: 0;
+}
+
+.adv-typing {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0.5rem 0.75rem;
+    background: #F1F5F9;
+    border-radius: 999px;
+    margin-bottom: 0.4rem;
+}
+.adv-typing span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #8B5CF6;
+    animation: adv-bounce 1.1s infinite ease-in-out;
+}
+.adv-typing span:nth-child(2) { animation-delay: 0.15s; }
+.adv-typing span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes adv-bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+    30% { transform: translateY(-4px); opacity: 1; }
+}
+
+@media (max-width: 480px) {
+    .st-key-__PFX__fab_wrap { right: 16px; bottom: 16px; }
+    .st-key-__PFX__panel_wrap {
+        right: 16px;
+        left: 16px;
+        width: auto;
+        max-width: none;
+        bottom: 88px;
+        max-height: min(70vh, calc(100vh - 170px));
+    }
+}
+</style>
+""".replace("__PFX__", STATE_PREFIX)
+
+
+def _inject_css() -> None:
+    st.markdown(_CSS, unsafe_allow_html=True)
+
+
 def _init_state() -> None:
     if _key("active") not in st.session_state:
         st.session_state[_key("active")] = False
@@ -225,128 +391,144 @@ _QUESTIONS = {
 
 def render(data: dict) -> None:
     _init_state()
+    _inject_css()
 
-    if st.button("🤖 AI Summary — ask the advisor", key=_key("open_btn")):
-        if not st.session_state[_key("active")]:
-            st.session_state[_key("active")] = True
-            _reset()
+    active = st.session_state[_key("active")]
+
+    with st.container(key=_key("fab_wrap")):
+        if st.button("✕" if active else "✨", key=_key("fab_btn"), help="AI advisor"):
+            st.session_state[_key("active")] = not active
+            if not active:  # was closed -> just opened: start a fresh intake
+                _reset()
             st.rerun()
 
     if not st.session_state[_key("active")]:
         return
 
-    with st.container(border=True):
-        top = st.columns([6, 1])
-        top[0].markdown("**AI advisor**")
-        if top[1].button("✖", key=_key("close_btn"), help="Close"):
-            st.session_state[_key("active")] = False
-            st.rerun()
-
-        for msg in st.session_state[_key("history")]:
-            st.chat_message(msg["role"]).write(msg["content"])
-
-        step = st.session_state[_key("step")]
-        answers = st.session_state[_key("answers")]
-
-        if step == "purpose":
-            c1, c2 = st.columns(2)
-            if c1.button("🏠 Buy property", key=_key("purpose_property")):
-                _say("user", "Buy property")
-                _goto("budget")
-                st.rerun()
-            if c2.button("🏢 Invest in a business", key=_key("purpose_business")):
-                _say("user", "Invest in a business")
-                _goto("sector")
-                st.rerun()
-
-        elif step == "budget":
-            for tier in BUDGET_TIERS:
-                if st.button(tier, key=_key(f"budget_{tier}")):
-                    answers["budget"] = tier
-                    _say("user", tier)
-                    _goto("anchor")
-                    st.rerun()
-
-        elif step == "anchor":
-            region_names = [r["name"] for r in data["regions"]]
-            with st.form(key=_key("anchor_form")):
-                anchor = st.selectbox("Anchor region", region_names)
-                if st.form_submit_button("Continue"):
-                    answers["anchor"] = anchor
-                    _say("user", anchor)
-                    _goto("priority")
-                    st.rerun()
-
-        elif step == "priority":
-            for label in PROPERTY_PRIORITIES:
-                if st.button(label, key=_key(f"priority_{label}")):
-                    answers["priority"] = label
-                    _say("user", label)
-                    _goto("property_notes")
-                    st.rerun()
-
-        elif step == "property_notes":
-            with st.form(key=_key("property_notes_form")):
-                notes = st.text_input("Anything else? (optional)")
-                c1, c2 = st.columns(2)
-                submit = c1.form_submit_button("Continue")
-                skip = c2.form_submit_button("Skip")
-                if submit or skip:
-                    text = notes if submit else ""
-                    if text:
-                        _say("user", text)
-                    answers["notes"] = text
-                    st.session_state[_key("step")] = "done"
-                    st.rerun()
-
-        elif step == "sector":
-            for sector in data["business_sectors"]:
-                label = f"{sector['code']} — {sector['name']}"
-                if st.button(label, key=_key(f"sector_{sector['code']}")):
-                    answers["sector_code"] = sector["code"]
-                    _say("user", label)
-                    _goto("risk")
-                    st.rerun()
-
-        elif step == "risk":
-            for label in RISK_PREFERENCES:
-                if st.button(label, key=_key(f"risk_{label}")):
-                    answers["risk"] = label
-                    _say("user", label)
-                    _goto("business_notes")
-                    st.rerun()
-
-        elif step == "business_notes":
-            with st.form(key=_key("business_notes_form")):
-                notes = st.text_input("Anything else? (optional)")
-                c1, c2 = st.columns(2)
-                submit = c1.form_submit_button("Continue")
-                skip = c2.form_submit_button("Skip")
-                if submit or skip:
-                    text = notes if submit else ""
-                    if text:
-                        _say("user", text)
-                    answers["notes"] = text
-                    st.session_state[_key("step")] = "done"
-                    st.rerun()
-
-        elif step == "done":
-            if st.session_state[_key("result")] is None:
-                is_property = "budget" in answers
-                context = (
-                    _property_context(data, answers)
-                    if is_property
-                    else _business_context(data, answers)
+    with st.container(key=_key("panel_wrap")):
+        with st.container(key=_key("header")):
+            hcol1, hcol2 = st.columns([6, 1], vertical_alignment="center")
+            with hcol1:
+                st.markdown(
+                    '<div class="adv-title">AI advisor <span class="adv-dot"></span></div>'
+                    '<div class="adv-sub">Grounded in this app\'s data — not financial advice</div>',
+                    unsafe_allow_html=True,
                 )
-                if context["empty"]:
-                    result = "I couldn't find any matching data for that combination — try different answers."
-                else:
-                    with st.spinner("Thinking..."):
-                        result = synthesize(context, answers.get("notes", ""))
-                st.session_state[_key("result")] = result
-                _say("assistant", result)
-                st.rerun()
-            else:
-                if st.button("🔄 Start over", key=_key("restart_btn")):
-                    _reset()
+            with hcol2:
+                if st.button("✕", key=_key("close_btn"), help="Close"):
+                    st.session_state[_key("active")] = False
                     st.rerun()
+
+        with st.container(key=_key("messages"), height=340):
+            for msg in st.session_state[_key("history")]:
+                st.chat_message(msg["role"], avatar=_AVATARS.get(msg["role"])).write(msg["content"])
+
+        with st.container(key=_key("input_area")):
+            step = st.session_state[_key("step")]
+            answers = st.session_state[_key("answers")]
+
+            if step == "purpose":
+                c1, c2 = st.columns(2)
+                if c1.button("🏠 Buy property", key=_key("purpose_property"), width="stretch"):
+                    _say("user", "Buy property")
+                    _goto("budget")
+                    st.rerun()
+                if c2.button("🏢 Invest in a business", key=_key("purpose_business"), width="stretch"):
+                    _say("user", "Invest in a business")
+                    _goto("sector")
+                    st.rerun()
+
+            elif step == "budget":
+                for tier in BUDGET_TIERS:
+                    if st.button(tier, key=_key(f"budget_{tier}"), width="stretch"):
+                        answers["budget"] = tier
+                        _say("user", tier)
+                        _goto("anchor")
+                        st.rerun()
+
+            elif step == "anchor":
+                region_names = [r["name"] for r in data["regions"]]
+                with st.form(key=_key("anchor_form")):
+                    anchor = st.selectbox("Anchor region", region_names)
+                    if st.form_submit_button("Continue", type="primary", icon=":material/arrow_forward:"):
+                        answers["anchor"] = anchor
+                        _say("user", anchor)
+                        _goto("priority")
+                        st.rerun()
+
+            elif step == "priority":
+                for label in PROPERTY_PRIORITIES:
+                    if st.button(label, key=_key(f"priority_{label}"), width="stretch"):
+                        answers["priority"] = label
+                        _say("user", label)
+                        _goto("property_notes")
+                        st.rerun()
+
+            elif step == "property_notes":
+                with st.form(key=_key("property_notes_form")):
+                    notes = st.text_input("Anything else? (optional)", placeholder="Type here…")
+                    c1, c2 = st.columns(2)
+                    submit = c1.form_submit_button("Send", type="primary", icon=":material/send:", width="stretch")
+                    skip = c2.form_submit_button("Skip", width="stretch")
+                    if submit or skip:
+                        text = notes if submit else ""
+                        if text:
+                            _say("user", text)
+                        answers["notes"] = text
+                        st.session_state[_key("step")] = "done"
+                        st.rerun()
+
+            elif step == "sector":
+                for sector in data["business_sectors"]:
+                    label = f"{sector['code']} — {sector['name']}"
+                    if st.button(label, key=_key(f"sector_{sector['code']}"), width="stretch"):
+                        answers["sector_code"] = sector["code"]
+                        _say("user", label)
+                        _goto("risk")
+                        st.rerun()
+
+            elif step == "risk":
+                for label in RISK_PREFERENCES:
+                    if st.button(label, key=_key(f"risk_{label}"), width="stretch"):
+                        answers["risk"] = label
+                        _say("user", label)
+                        _goto("business_notes")
+                        st.rerun()
+
+            elif step == "business_notes":
+                with st.form(key=_key("business_notes_form")):
+                    notes = st.text_input("Anything else? (optional)", placeholder="Type here…")
+                    c1, c2 = st.columns(2)
+                    submit = c1.form_submit_button("Send", type="primary", icon=":material/send:", width="stretch")
+                    skip = c2.form_submit_button("Skip", width="stretch")
+                    if submit or skip:
+                        text = notes if submit else ""
+                        if text:
+                            _say("user", text)
+                        answers["notes"] = text
+                        st.session_state[_key("step")] = "done"
+                        st.rerun()
+
+            elif step == "done":
+                if st.session_state[_key("result")] is None:
+                    is_property = "budget" in answers
+                    context = (
+                        _property_context(data, answers)
+                        if is_property
+                        else _business_context(data, answers)
+                    )
+                    if context["empty"]:
+                        result = "I couldn't find any matching data for that combination — try different answers."
+                    else:
+                        st.markdown(
+                            '<div class="adv-typing"><span></span><span></span><span></span></div>',
+                            unsafe_allow_html=True,
+                        )
+                        result = synthesize(context, answers.get("notes", ""))
+                    st.session_state[_key("result")] = result
+                    _say("assistant", result)
+                    st.rerun()
+                else:
+                    if st.button("🔄 Start over", key=_key("restart_btn"), type="primary", width="stretch"):
+                        _reset()
+                        st.rerun()
