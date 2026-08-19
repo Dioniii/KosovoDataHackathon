@@ -309,23 +309,6 @@ if national:
 
 ai_advisor.render(data)
 
-st.markdown(
-    """
-    <div class="disclaimer">
-      <span class="tag">Note</span>
-      <b>Not investment advice.</b> This is a screening tool that ranks regions from
-      public statistics as a starting point for research — not a recommendation to buy or invest.
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
-
-if national:
-    k1, k2, k3 = st.columns(3)
-    k1.metric("GDP growth", f"{national.get('gdp_growth_pct', '—')}%")
-    k2.metric("FDI (% of GDP)", f"{national.get('fdi_pct_gdp', '—')}%")
-    k3.metric("Data updated", str(national.get("last_updated", "—")))
-
 st.write("")
 tab_property, tab_business = st.tabs(["Buy property", "Invest in a business"])
 
